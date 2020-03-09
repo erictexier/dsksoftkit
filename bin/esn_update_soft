@@ -1,0 +1,294 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import getpass
+import argparse
+from pprint import pformat
+
+from dskenv.proxy_env import ProdEnv
+from dskenv.versioned_dir import DirVersioned
+from dskenv import dskenv_constants
+
+
+from dskenv.api.dsk_release_lib import DskReleaseLib
+from dsk.base.lib.repo_api import RepoApi
+
+from dsk.base.utils.filesystem_utils import FileSystemUtils
+#from dsk.base.lib.log_manager import LogManager
+#l = LogManager()
+#l.initialize_custom_handler()
+#l.global_debug = True
+#log = l.get_logger("dsk")
+
+from dsk.base.utils.msg_utils import MsgUtils as log
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-e","--envi_file", dest="envi_file",action="store",
+                        default="", help="name of an envi_info file")
+
+
+    parser.add_argument("-b","--batch", action="store_true", default = False,
+                        dest="batch",
+                        help="skip user's input")
+
+    parser.add_argument("-s","--skip",
+                        action="store_true", default = False,
+                        dest="skip_config",
+                        help="skip create config")
+
+    parser.add_argument("-n","--noinstall",
+                        action="store_true", default = False,
+                        dest="no_install",
+                        help="create config only")
+
+    parser.add_argument("-c","--current",
+                        action="store_true", default = False,
+                        dest="do_current",
+                        help="create current link pointing to the new release")
+
+
+    parser.add_argument("-u", dest="user", action="store",
+                        default=getpass.getuser(), help="alternative user")
+
+    parser.add_argument('--dry-run',
+                        action="store_true", default=False,
+                        dest="dryrun")
+
+    parser.add_argument('repo_list', nargs='*',
+                        help="list of repo to install, can be pack name")
+
+    args = parser.parse_args()
+
+    x = os.environ.get(dskenv_constants.DSK_ENV_PATH_KEY,"")
+    xori = ProdEnv().base()
+    searchpackfrom = list()
+    release = DskReleaseLib()
+    if args.envi_file != "":
+        log.info("Using envi_info file from %r" % args.envi_file)
+        release.reset(args.envi_file)
+        ProdEnv(args.envi_file)
+        if ProdEnv.base() != xori:
+            searchpackfrom = [xori]
+        x = os.environ.get(dskenv_constants.DSK_ENV_PATH_KEY,"")
+    else:
+        log.info("Using envi_info file from %r" % x)
+    searchpackfrom.append(ProdEnv.user_home(args.user))
+
+    release.load_data()
+    if not release.is_valid():
+        log.error("Cannot find release info")
+        sys.exit(1)
+
+    if args.dryrun:
+        log.info("DRY RUN")
+    log.info("batch: %s" % args.batch)
+    log.info("skip config: %s" % args.skip_config)
+    log.info("no install: %s" % args.no_install)
+
+
+    if args.batch == False:
+        answer = raw_input("You are releasing to prod.\nAre you sure you want to pursue [Yn] ?")
+        answer = answer.lower()
+        if answer == "": answer = "y"
+        if answer != "y":
+            sys.exit(0)
+
+
+    repo_list = list()
+    if len(args.repo_list) == 0:
+        repo_list.extend(release.default_repo_to_install())
+    else:
+        for aname in args.repo_list:
+            new_name = release.valid_name(aname)
+            if new_name != "":
+                repo_list.append(new_name)
+            else:
+                log.error("Couldn't find repo ... ignoring".format(aname))
+
+    if len(repo_list) == 0:
+        log.info("nothing to install")
+        sys.exit(0)
+
+    # be sure that there is no double
+    repo_list = set(repo_list)
+
+    for repo in repo_list:
+        log.info("="*80)
+        log.info("=" * 3 + release.short_name_repo(repo))
+        release_area = release.main_release_area()
+        # check if this repo has an alternative release area
+        alt_area = release.get_alt_release_area(repo)
+        if alt_area != '' and os.path.exists(alt_area):
+            release_area = alt_area
+
+        if args.no_install == False:
+            log.info("Start releasing to '{}'".format(release_area))
+
+        sub_release_area = release_area
+        repo_dirname = repo
+        if os.sep in repo:
+            srepo = repo.split(os.sep)
+            sub_release_area = os.path.join(release_area, os.sep.join(srepo[:-1]))
+            repo_dirname = srepo[-1]
+
+        FileSystemUtils.ensure_folder_exists(sub_release_area,
+                                             permissions=0o775)
+
+
+        log.info("repo: {} shortname: {}".format(repo,release.short_name_repo(repo)))
+        res = release.descriptor_repo(repo)
+        log.info("location {}".format(pformat(res, indent=4)))
+
+
+        # get repo descriptor
+        """should be replace with sgtk descriptor maybe.... """
+        repo_address = ""
+        repo_type = ""
+        repo_branch = ""
+
+        if 'path' in res:
+            repo_address = res['path']
+        if 'branch' in res:
+            repo_branch = res['branch']
+        if 'type' in res:
+            repo_type = res['type']
+
+        if repo_address == "":
+            log.error("cannot find a valid address for repo: {}".format(repo))
+            continue
+        if repo_type != 'git':
+            log.error("{}: Only support 'git' for now".format(repo))
+            if repo_type != "":
+                log.error("\t{} found type:".format(repo_type))
+                continue
+        if repo_branch != "":
+            log.info("Ready to install {}, branch {}".format(repo_address,repo_branch))
+        else:
+            log.info("Ready to install {} origin".format(repo_address))
+
+        packname = release.short_name_repo(repo)
+
+        repo_api = RepoApi(repo_address)
+        if args.dryrun == False:
+            # install will do the cloning and copy the repo file to release
+
+            do_version = release.repo_do_version(repo)
+
+            # if argument -c 'do_current' is false, but the repo is mark as do current
+            repo_do_current =  release.repo_do_current(repo)
+
+
+            log.debug("before no_install")
+
+            if args.no_install == True:
+                result_install = repo_api.lastest_install(sub_release_area,
+                                                          repo_dirname,
+                                                          do_version)
+
+            else:
+                result_install = repo_api.install(sub_release_area,
+                                                  repo_branch,
+                                                  do_version = do_version,
+                                                  new_version = release.repo_do_newversion(repo))
+            log.debug("after no_install: %s" % result_install.success)
+            if result_install.success == True:
+                installed_code = os.path.join(sub_release_area,repo_dirname)
+                final_dest = os.path.join(installed_code,result_install.tagname)
+                if args.do_current or repo_do_current and do_version == True:
+                    current = os.path.join(installed_code,'current')
+                    try:
+                        os.remove(current)
+                    except:
+                        pass
+                    try:
+                        os.symlink(final_dest,current)
+                    except Exception as e:
+                        log.error(str(e))
+                log.info("%s has been installed at %s" % (repo_dirname,final_dest))
+
+            if args.skip_config:
+                log.info("DONE Installing with no config creation")
+                continue
+
+            pack_version_with_version = True
+            do_pack = release.repo_do_pack(repo)
+            if do_version == False and do_pack == True:
+                pack_version_with_version = False
+
+            # build pack
+            if (result_install.success and
+                release.repo_do_pack(repo) and
+                packname != ""):
+
+                repo_api.pack_commit(searchpackfrom,
+                                     ProdEnv.base(),
+                                     packname,
+                                     sub_release_area,
+                                     repo_dirname,
+                                     result_install.tagname,
+                                     with_version=pack_version_with_version)
+                log.info("DONE installing: %s" % repo)
+
+            elif (args.no_install == True and
+                  release.repo_do_pack(repo) and
+                  packname != ""):
+                # tag name should be the name of the latest version or ""
+                tagname = ""
+                success = False
+                if do_version:
+                    # search the latest version v*.*.* in the top release
+                    top_install = os.path.join(sub_release_area,repo_dirname)
+                    all_ver = list()
+                    try:
+                        all_ver = os.listdir(top_install)
+                    except:
+                        pass
+                    all_ver = [DirVersioned(x) for x in all_ver]
+                    all_ver = filter(lambda x: x.is_versioned(),all_ver)
+                    all_ver = [x.name for x in reversed(sorted(all_ver,
+                                                               DirVersioned.compare_version))]
+                    if len(all_ver) > 0:
+                        tagname = all_ver[0]
+                        success = True
+                else:
+                    success = True
+                if success == True:
+                    
+                    repo_api.pack_commit(searchpackfrom,
+                                         ProdEnv.base(),
+                                         packname,
+                                         sub_release_area,
+                                         repo_dirname,
+                                         tagname,
+                                         with_version=pack_version_with_version)
+
+            elif result_install.success == False and do_version == True:
+                log.error(result_install.errors)
+            elif do_version == False:
+                log.info("DONE with executable: %s" % sys.argv[0])
+            log.info("\n")
+
+        else:
+
+
+            log.info("Will run install on %s branch %s" % (release_area,
+                                                           repo_branch if repo_branch != "" else 'origin'))
+            log.info("As user: %s" % args.user)
+
+            if (release.repo_do_pack(repo) and packname != ""):
+                from dskenv.pack_info import PackInfo
+                afile = ""
+                for ff in searchpackfrom:
+                    tfile = os.path.join(ff,PackInfo.get_label(),packname+".py")
+                    if os.path.exists(tfile):
+                        afile = tfile
+                        break
+                do_version = release.repo_do_version(repo)
+                log.info("do version: %s" % do_version)
+                log.info("Will commit a new versioned pack: %r" % packname)
+                log.info("Will be create an pack for it in: %r" % ProdEnv.base())
+                log.info("as specified by %s" % afile)

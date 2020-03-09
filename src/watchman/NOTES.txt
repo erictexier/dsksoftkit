@@ -1,0 +1,22 @@
+watchman command line utility instructions.
+
+
+########################################################################################
+Build instructions: The following will build all the executable binaries.
+
+1. Run this in a shell in same directory as the source code:
+
+cmake -g "Unix Makefiles" .
+make
+
+########################################################################################
+Deployment Instructions: 
+
+1. Log in as watchman and run the following to give the user "watchman" ownership
+and 'set user,group ID on execution' to watchman permission, with "noone
+write", and "others can't execute" with "noone write, others can't execute":
+
+su watchman
+cd .../watchman/
+chown <execs> watchman
+chmod a-w,ug+s,o-x <execs>  # noone write, setuid, setgid, other can't execute
