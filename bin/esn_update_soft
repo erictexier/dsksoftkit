@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
 
     if args.batch == False:
-        answer = raw_input("You are releasing to prod.\nAre you sure you want to pursue [Yn] ?")
+        answer = input("You are releasing to prod.\nAre you sure you want to pursue [Yn] ?")
         answer = answer.lower()
         if answer == "": answer = "y"
         if answer != "y":
