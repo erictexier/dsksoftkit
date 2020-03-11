@@ -50,7 +50,6 @@ def send_mail(sendFrom,
     for i in range(len(sendBcc)):
         if '@' not in sendBcc[i]:
             sendBcc[i] += addressEmailSuffix
-    
 
     msg = MIMEMultipart()
     msg['From'] = sendFrom
