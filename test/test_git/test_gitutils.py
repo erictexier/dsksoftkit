@@ -39,6 +39,7 @@ def test_version_when_tag():
     assert rootname != ""
     assert tag != ""
     ### example de generation de repo over write
-    #res=x.install_repo_from_bash(SRC_REPO, RELEASE_LOCATION_DISK, rootname, tag)
+    #res=x.install_repo_from_bash(
+    #    SRC_REPO, RELEASE_LOCATION_DISK,rootname, tag)
     #print("\n".join(res))
 

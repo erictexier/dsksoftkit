@@ -3,8 +3,6 @@ import logging
 import string
 
 
-####################################
-
 class MsgUtils(object):
     _logger = ""
     _wlogger = None
@@ -12,22 +10,21 @@ class MsgUtils(object):
     # convenient to call the log.write wrapper
     _callerWraper = None
 
-    # convenient for detail call 
+    # convenient for detail call
     _levelWraper = None
 
-
     def __init__(self):
-        if MsgUtils._callerWraper == None:
-            MsgUtils._callerWraper = {'debug':MsgUtils.debug,
-                                      'error':MsgUtils.error,
-                                      'info':MsgUtils.info,
-                                      'warning':MsgUtils.warning}
-        if MsgUtils._levelWraper == None:
-            MsgUtils._levelWraper = {0:MsgUtils.whoami0, # none (default
-                                     1:MsgUtils.line_number, #  (line_number)
-                                     2:MsgUtils.caller_name, # function 
-                                     3:MsgUtils.whoami1, # function (line_number)
-                                     4:MsgUtils.whoami2} # module function (line_number)
+        if MsgUtils._callerWraper is None:
+            MsgUtils._callerWraper = {'debug': MsgUtils.debug,
+                                      'error': MsgUtils.error,
+                                      'info': MsgUtils.info,
+                                      'warning': MsgUtils.warning}
+        if MsgUtils._levelWraper is None:
+            MsgUtils._levelWraper = {0: MsgUtils.whoami0,  # none (default
+                                     1: MsgUtils.line_number,  # (line_number)
+                                     2: MsgUtils.caller_name,  # function
+                                     3: MsgUtils.whoami1,  # function
+                                     4: MsgUtils.whoami2}  # module
 
     @staticmethod
     def set_logger(logger):
@@ -53,84 +50,85 @@ class MsgUtils(object):
     @staticmethod
     def whoami1(frame):
         return "%s (%d)" % (sys._getframe(frame).f_code.co_name,
-                                        sys._getframe(frame).f_lineno)
+                            sys._getframe(frame).f_lineno)
 
     @staticmethod
     def whoami2(frame):
-        return "%s %s (%d)" % (sys._getframe(frame).f_code.co_filename,
-                                             sys._getframe(frame).f_code.co_name,
-                                             sys._getframe(frame).f_lineno)
+        return "%s %s (%d)" % (
+                            sys._getframe(frame).f_code.co_filename,
+                            sys._getframe(frame).f_code.co_name,
+                            sys._getframe(frame).f_lineno)
 
-    ##################
     @staticmethod
-    def error(amsg,*extra,**kdata):
+    def error(amsg, *extra, **kdata):
         if 'd' in kdata:
             index = kdata['d']
-            msg = "%s - %s" % (MsgUtils._levelWraper[index](2),amsg)
+            msg = "%s - %s" % (MsgUtils._levelWraper[index](2), amsg)
         else:
             msg = amsg
         if extra != ():
-            msg = msg + ", " + string.join(extra) 
+            msg = msg + ", " + string.join(extra)
 
         if MsgUtils._logger:
             logging.getLogger(MsgUtils._logger).error(msg)
         else:
             print(("ERROR: %s" % msg))
 
-        if MsgUtils._doFlush and hasattr(sys.stdout,"flush"):sys.stdout.flush()
+        if MsgUtils._doFlush and hasattr(sys.stdout, "flush"):
+            sys.stdout.flush()
 
-    ##################
     @staticmethod
-    def debug(amsg,*extra,**kdata):
+    def debug(amsg, *extra, **kdata):
         if 'd' in kdata:
             index = kdata['d']
-            msg = "%s - %s" % (MsgUtils._levelWraper[index](2),amsg)
+            msg = "%s - %s" % (MsgUtils._levelWraper[index](2), amsg)
         else:
             msg = amsg
         if extra != ():
-            msg = msg + ", " + string.join(extra) 
+            msg = msg + ", " + string.join(extra)
 
         if MsgUtils._logger:
             logging.getLogger(MsgUtils._logger).debug(msg)
         else:
             print(("DEBUG: %s" % msg))
 
-        if MsgUtils._doFlush and hasattr(sys.stdout,"flush"):sys.stdout.flush()
+        if MsgUtils._doFlush and hasattr(sys.stdout, "flush"):
+            sys.stdout.flush()
 
-    ##################
     @staticmethod
-    def warning(amsg,*extra,**kdata):
+    def warning(amsg, *extra, **kdata):
         if 'd' in kdata:
             index = kdata['d']
-            msg = "%s - %s" % (MsgUtils._levelWraper[index](2),amsg)
+            msg = "%s - %s" % (MsgUtils._levelWraper[index](2), amsg)
         else:
             msg = amsg
         if extra != ():
-            msg = msg + ", " + string.join(extra) 
+            msg = msg + ", " + string.join(extra)
 
         if MsgUtils._logger:
             logging.getLogger(MsgUtils._logger).warning(msg)
         else:
             print(("WARNING: %s" % msg))
-        if MsgUtils._doFlush and hasattr(sys.stdout,"flush"):sys.stdout.flush()
-    ##################
+        if MsgUtils._doFlush and hasattr(sys.stdout, "flush"):
+            sys.stdout.flush()
+
     @staticmethod
-    def info(amsg,*extra,**kdata):
+    def info(amsg, *extra, **kdata):
         if 'd' in kdata:
             index = kdata['d']
-            msg = "%s - %s" % (MsgUtils._levelWraper[index](2),amsg)
+            msg = "%s - %s" % (MsgUtils._levelWraper[index](2), amsg)
         else:
             msg = amsg
         if extra != ():
-            msg = msg + ", " + string.join(extra) 
-        
+            msg = msg + ", " + string.join(extra)
+
         if MsgUtils._logger:
             logging.getLogger(MsgUtils._logger).info(msg)
         else:
             print(("INFO: %s" % msg))
-        if MsgUtils._doFlush and hasattr(sys.stdout,"flush"):sys.stdout.flush()
+        if MsgUtils._doFlush and hasattr(sys.stdout, "flush"):
+            sys.stdout.flush()
 
-    ##################
     @staticmethod
     def msg(data):
         # generic print
@@ -141,10 +139,10 @@ class MsgUtils(object):
 
     ##################
     @staticmethod
-    def write(data,amode='debug'):
+    def write(data, amode='debug'):
         """ to mimic the api of log
         """
         MsgUtils._callerWraper[amode](data)
 
 # this is for initialisation for some class member, keep it
-singleMsgUtils=MsgUtils()
+singleMsgUtils = MsgUtils()

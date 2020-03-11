@@ -33,10 +33,10 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
 
     :param src_zip_file: Path to zip file to uncompress
     :param target_folder: Folder to extract into
-    :param auto_detect_bundle: Hints that the attachment contains a toolkit bundle
-        (config, app, engine, framework) and that this should be attempted to be
-        detected and unpacked intelligently. For example, if the zip file contains
-        the bundle in a subfolder, this should be correctly unfolded.
+    :param auto_detect_bundle: Hints that the attachment contains toolkit bundle
+     (config, app, engine, framework) and that this should be attempted to be
+     detected and unpacked intelligently. For example, if the zip file contains
+     the bundle in a subfolder, this should be correctly unfolded.
     """
     log.debug("Unpacking %s into %s" % (src_zip_file, target_folder))
     zip_obj = zipfile.ZipFile(src_zip_file, "r")
@@ -73,7 +73,6 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
             extraction_done = True
 
     # loosely based on:
-    # http://forums.devshed.com/python-programming-11/unzipping-a-zip-file-having-folders-and-subfolders-534487.html
     #
     # make sure we are using consistent permissions
     # get list of file names contained in archive

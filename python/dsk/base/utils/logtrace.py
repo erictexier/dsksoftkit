@@ -17,6 +17,10 @@
 #   limitations under the License.
 
 import re, sys, types
+import logging
+import types
+import pdb
+from pprint import pformat
 
 """
 Have all your function & method calls automatically logged, in indented outline
@@ -52,7 +56,7 @@ less's 'F' command is supposed to do this correctly but doesn't work for me.
 """
 
 
-#@@@ should use the standard python logging system?
+# @@@ should use the standard python logging system?
 log = sys.stdout
 
 # Globally incremented across function calls, so tracks stack depth
@@ -65,14 +69,10 @@ indStr = '  '
 #  cygwin dosbox: run through |cat and then colors work
 #  linux: works on console & gnome-terminal
 #  mac: untested
-import logging
-import types
-import pdb
-from pprint import pformat
 TRACE = pdb.set_trace
 
 fmt = "%(name)s: %(indent)s%(funcNameExtra)s: %(message)s"
-#fmt = "%(name)s %(levelnames): %(message)s"
+# fmt = "%(name)s %(levelnames): %(message)s"
 debug_logger = logging.getLogger('TRC')
 debug_handler = logging.StreamHandler()
 debug_logger.addHandler(debug_handler)
@@ -82,6 +82,7 @@ debug_logger.propagate = False
 
 indent = 0
 indent_amount = 2
+
 
 def logify(fn):
     '''Decorator for adding tracing messages to the call of a function'''
@@ -100,7 +101,12 @@ def logify(fn):
             debug_logger.debug('ARG: %s' % pformat(args))
             result = fn(*args, **kwargs)
         finally:
-            debug_logger.debug("End...", extra={'funcNameExtra': extra, 'indent': indent_spaces})
+            debug_logger.debug(
+                            "End...",
+                            extra={'funcNameExtra': extra,
+                                   'indent': indent_spaces
+                                  }
+                                )
             indent = max(indent - indent_amount, 0)
         return result
 
@@ -113,8 +119,8 @@ def logify(fn):
     return new
 
 def logtrace(funcOrClass):
-    '''Decorator and function that sets up a function to be traced and changes a class
-    so that its functions are traced
+    '''Decorator and function that sets up a function to be traced and 
+    changes a class so that its functions are traced
     '''
     if isinstance(funcOrClass, type):
         for name in dir(funcOrClass):
@@ -136,22 +142,22 @@ def logtrace_class(cls):
                 setattr(cls, name, logify(func))
     return cls
 
-BLACK     =        "\033[0;30m"
-BLUE      =        "\033[0;34m"
-GREEN     =        "\033[0;32m"
-CYAN      =       "\033[0;36m"
-RED       =        "\033[0;31m"
-PURPLE    =        "\033[0;35m"
-BROWN     =        "\033[0;33m"
-GRAY      =        "\033[0;37m"
-BOLDGRAY  =       "\033[1;30m"
-BOLDBLUE     =   "\033[1;34m"
-BOLDGREEN    =   "\033[1;32m"
-BOLDCYAN     =   "\033[1;36m"
-BOLDRED      =   "\033[1;31m"
-BOLDPURPLE   =   "\033[1;35m"
-BOLDYELLOW   =         "\033[1;33m"
-WHITE     =        "\033[1;37m"
+BLACK = "\033[0;30m"
+BLUE = "\033[0;34m"
+GREEN = "\033[0;32m"
+CYAN = "\033[0;36m"
+RED = "\033[0;31m"
+PURPLE = "\033[0;35m"
+BROWN = "\033[0;33m"
+GRAY = "\033[0;37m"
+BOLDGRAY = "\033[1;30m"
+BOLDBLUE = "\033[1;34m"
+BOLDGREEN = "\033[1;32m"
+BOLDCYAN = "\033[1;36m"
+BOLDRED = "\033[1;31m"
+BOLDPURPLE = "\033[1;35m"
+BOLDYELLOW = "\033[1;33m"
+WHITE = "\033[1;37m"
 
 NORMAL = "\033[0m"
 
@@ -161,12 +167,13 @@ def indentlog(message):
     print("%s%s" %(indStr*indent, message), file=log)
     log.flush()
 
+
 def shortstr(obj):
     """
     Where to put gritty heuristics to make an object appear in most useful
     form. defaults to __str__.
     """
-    if "wx." in str(obj.__class__)  or  obj.__class__.__name__.startswith("wx"):
+    if "wx." in str(obj.__class__) or obj.__class__.__name__.startswith("wx"):
         shortclassname = obj.__class__.__name__
         ##shortclassname = str(obj.__class__).split('.')[-1]
         if hasattr(obj, "blockItem") and hasattr(obj.blockItem, "blockName"):
@@ -176,6 +183,7 @@ def shortstr(obj):
         return "<%s %s>" % (shortclassname, moreInfo)
     else:
         return str(obj)
+
 
 def formatAllArgs(args, kwds):
     """
@@ -190,8 +198,6 @@ def formatAllArgs(args, kwds):
     if len(formattedArgs) > 150:
         return formattedArgs[:146] + " ..."
     return formattedArgs
-
-
 
 
 def logfunction(theFunction, displayName=None):
@@ -214,6 +220,7 @@ def logfunction(theFunction, displayName=None):
         ##indentlog("return: %s"% shortstr(returnval)
         return returnval
     return _wrapper
+
 
 def logmethod(theMethod, displayName=None):
     """use this for class or instance methods, it formats with the object out front."""
@@ -290,6 +297,7 @@ def logclass(cls, methodsAsFunctions=False,
             setattr(cls, name, staticmethod(w))
     return cls
 
+
 class LogMetaClass(type):
     """
     Alternative to logclass(), you set this as a class's __metaclass__.
@@ -302,32 +310,37 @@ class LogMetaClass(type):
     """
 
     def __new__(cls,classname,bases,classdict):
-        logmatch = re.compile(classdict.get('logMatch','.*'))
-        lognotmatch = re.compile(classdict.get('logNotMatch', 'nevermatchthisstringasdfasdf'))
+        logmatch = re.compile(classdict.get('logMatch', '.*'))
+        lognotmatch = re.compile(classdict.get('logNotMatch', 'nesdfasdf'))
 
         for attr,item in list(classdict.items()):
-            if callable(item) and logmatch.match(attr) and not lognotmatch.match(attr):
+            if (callable(item) and logmatch.match(attr) and
+                    not lognotmatch.match(attr)):
                 classdict['_H_%s'%attr] = item    # rebind the method
                 classdict[attr] = logmethod(item) # replace method by wrapper
 
-        return type.__new__(cls,classname,bases,classdict)
+        return type.__new__(cls,classname, bases, classdict)
+
+
 # ---------------------------- Tests and examples ----------------------------
 
 if __name__=='__main__':
-    print(); print("------------------- single function logging ---------------")
+    print();
+    print("------------------- single function logging ---------------")
     @logfunction
     def test():
         return 42
 
     test()
 
-    print(); print("------------------- single method logging -----------------")
+    print();
+    print("------------------- single method logging --------------")
     class Test1(object):
         def __init__(self):
             self.a = 10
 
         @logmethod
-        def add(self,a,b): return a+b
+        def add(self,a,b): return a + b
 
         @logmethod
         def fac(self,val):
@@ -350,7 +363,8 @@ if __name__=='__main__':
     t.fac2(4)
 
 
-    print(); print("""-------------------- class "decorator" usage ------------------""")
+    print();
+    print("""---------------- class "decorator" usage --------------""")
     class Test2(object):
         #will be ignored
         def __init__(self):
@@ -358,8 +372,8 @@ if __name__=='__main__':
         def ignoreThis(self): pass
 
 
-        def add(self,a,b):return a+b
-        def fac(self,val):
+        def add(self, a, b):return a + b
+        def fac(self, val):
             if val == 1:
                 return 1
             else:
@@ -368,28 +382,30 @@ if __name__=='__main__':
     Test2 = logclass(Test2, logMatch='fac|add')
 
     t2 = Test2()
-    t2.add(5,6)
+    t2.add(5, 6)
     t2.fac(4)
     t2.ignoreThis()
-
 
     print(); print("-------------------- metaclass usage ------------------")
     class Test3(object, metaclass=LogMetaClass):
         logNotMatch = 'ignoreThis'
 
-        def __init__(self): pass
+        def __init__(self):
+            pass
 
-        def fac(self,val):
+        def fac(self, val):
             if val == 1:
                 return 1
             else:
-                return val * self.fac(val-1)
+                return val * self.fac(val - 1)
         def ignoreThis(self): pass
     t3 = Test3()
     t3.fac(4)
     t3.ignoreThis()
 
-    print(); print("-------------- testing static & classmethods --------------")
+    print();
+    print("-------------- testing static & classmethods --------------")
+
     class Test4(object):
         @classmethod
         def cm(cls, a, b):
@@ -398,17 +414,17 @@ if __name__=='__main__':
 
         def im(self, a, b):
             print(self)
-            return a+b
+            return a + b
 
         @staticmethod
-        def sm(a,b): return a+b
+        def sm(a, b): return a + b
 
     Test4 = logclass(Test4)
 
-    Test4.cm(4,3)
-    Test4.sm(4,3)
+    Test4.cm(4, 3)
+    Test4.sm(4, 3)
 
     t4 = Test4()
-    t4.im(4,3)
-    t4.sm(4,3)
-    t4.cm(4,3)
+    t4.im(4, 3)
+    t4.sm(4, 3)
+    t4.cm(4, 3)

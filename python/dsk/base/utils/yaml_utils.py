@@ -1,11 +1,9 @@
 import os
 import yaml
 import sys
-
 import yaml.constructor
-
-
 from collections import OrderedDict
+
 
 class OrderedDictYamlLoader(yaml.Loader):
     """
@@ -13,10 +11,12 @@ class OrderedDictYamlLoader(yaml.Loader):
     """
 
     def __init__(self, *args, **kwargs):
-        super(OrderedDictYamlLoader,self).__init__(*args, **kwargs)
+        super(OrderedDictYamlLoader, self).__init__(*args, **kwargs)
 
-        self.add_constructor('tag:yaml.org,2002:map', type(self).construct_yaml_map)
-        self.add_constructor('tag:yaml.org,2002:omap', type(self).construct_yaml_map)
+        self.add_constructor('tag:yaml.org,2002:map',
+                             type(self).construct_yaml_map)
+        self.add_constructor('tag:yaml.org,2002:omap',
+                             type(self).construct_yaml_map)
 
     def construct_yaml_map(self, node):
         data = OrderedDict()
@@ -28,8 +28,11 @@ class OrderedDictYamlLoader(yaml.Loader):
         if isinstance(node, yaml.MappingNode):
             self.flatten_mapping(node)
         else:
-            raise yaml.constructor.ConstructorError(None, None,
-                'expected a mapping node, but found %s' % node.id, node.start_mark)
+            raise yaml.constructor.ConstructorError(
+                None,
+                None,
+                'expected a mapping node, but found %s' % node.id,
+                node.start_mark)
 
         mapping = OrderedDict()
         for key_node, value_node in node.value:
@@ -37,22 +40,26 @@ class OrderedDictYamlLoader(yaml.Loader):
             try:
                 hash(key)
             except TypeError as exc:
-                raise yaml.constructor.ConstructorError('while constructing a mapping',
-                    node.start_mark, 'found unacceptable key (%s)' % exc, key_node.start_mark)
+                raise yaml.constructor.ConstructorError(
+                    'while constructing a mapping',
+                    node.start_mark,
+                    'found unacceptable key(%s)' % exc, key_node.start_mark)
             value = self.construct_object(value_node, deep=deep)
             mapping[key] = value
         return mapping
+
 
 class OrderedDictYamlDumper(yaml.Dumper):
     class UnsortableList(list):
         def sort(self, *args, **kwargs):
             pass
+
     class UnsortableOrderedDict(OrderedDict):
         def items(self, *args, **kwargs):
             return UnsortableList(OrderedDict.items(self, *args, **kwargs))
-    yaml.Dumper.add_representer(UnsortableOrderedDict, yaml.representer.SafeRepresenter.represent_dict)
-
-
+    yaml.Dumper.add_representer(
+                            UnsortableOrderedDict,
+                            yaml.representer.SafeRepresenter.represent_dict)
 
 
 class YamlUtils(object):
@@ -62,23 +69,23 @@ class YamlUtils(object):
         data = {}
         try:
             with open(a_file, "rt") as fh:
-                if loader == None:
-                    data = yaml.load(fh,Loader=yaml.FullLoader)
+                if loader is None:
+                    data = yaml.load(fh, Loader=yaml.FullLoader)
                 else:
                     # note: save_data will not be suportted
-                    data = yaml.load(fh, Loader = loader)
+                    data = yaml.load(fh, Loader=loader)
         except Exception as e:
             raise Exception("Cannot parse yml file: %s" % e)
         return data
 
     @staticmethod
-    def save_data(a_file,data, dumper=None, indent = 4):
+    def save_data(a_file, data, dumper=None, indent=4):
         try:
             with open(a_file, "w") as fh:
-                if dumper == None:
-                    yaml.safe_dump(data, fh, indent = indent)
+                if dumper is None:
+                    yaml.safe_dump(data, fh, indent=indent)
                 else:
-                    yaml.dump(data, fh, Dumper = dumper, indent = indent)
+                    yaml.dump(data, fh, Dumper=dumper, indent=indent)
         except Exception as e:
             raise Exception("Cannot save_data yml file: %s" % e)
 

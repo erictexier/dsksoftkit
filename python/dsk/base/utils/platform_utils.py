@@ -14,7 +14,7 @@ from dsk.base.resources.dsk_constants import ROOT_CONFIG_DIR
 from dsk.base.resources.dsk_constants import NAME_CONFIG_DIR
 from dsk.base.resources.dsk_constants import ENVI_TEMPLATE_NAME
 from dsk.base.resources.dsk_constants import ENVI_DIRMAP_NAME
-from dskenv.dskenv_constants import DSK_MOUNTED_ROOT,DSK_DEV_AREA
+from dskenv.dskenv_constants import DSK_MOUNTED_ROOT, DSK_DEV_AREA
 
 DEFAULT_DIRMAP_FILE = os.path.join(os.sep,
                                    DSK_MOUNTED_ROOT,
@@ -35,9 +35,12 @@ else:
     raise DskErrorPython2or3Only("Need Python 2 or 3")
 
 from collections import namedtuple
-class LocationDefault(namedtuple('locationDefault', 
-                                 "cache_dir_def, log_file_def, pref_dir_def,  data_dir_def,"
-                                 "platform, namespace, is_user")):
+
+
+class LocationDefault(namedtuple(
+            'locationDefault', 
+            "cache_dir_def, log_file_def, pref_dir_def, data_dir_def,"
+            "platform, namespace, is_user")):
     __slots__ = ()
 
 
@@ -46,10 +49,9 @@ class LocationWithUrl(namedtuple('location_with_Url',
     __slots__ = ()
 
 
-
 log = LogManager.get_logger(__name__)
-
 from os.path import expanduser
+
 
 def get_home_user():
     ex = expanduser("~")
@@ -92,12 +94,15 @@ class LocalFileStorageManager(object):
               - Preferences: ``$DSK_HOME/preferences``
 
 
-    :constant LOGGING:     Indicates a path suitable for storing logs, useful for debugging
-    :constant CACHE:       Indicates a path suitable for storing cache data that can be deleted
-                           without any loss of functionality or state.
-    :constant PERSISTENT:  Indicates a path suitable for storing data that needs
-                           to be retained between sessions.
-    :constant PREFERENCES: Indicates a path that suitable for storing settings files and preferences.
+    :constant LOGGING:     Indicates a path suitable for storing logs,
+                            useful for debugging
+    :constant CACHE:       Indicates a path suitable for storing cache data
+                            that can be deleted without any loss of
+                            functionality or state.
+    :constant PERSISTENT:  Indicates a path suitable for storing data that 
+                            needs to be retained between sessions.
+    :constant PREFERENCES: Indicates a path that suitable for storing settings
+                            files and preferences.
     """
 
     # supported types of paths
@@ -112,7 +117,8 @@ class LocalFileStorageManager(object):
                                   alternative=None,
                                   is_user=True):
         """
-        Returns the platform specific location for CacheDir/Logging Name/Preferences/Persistent
+        Returns the platform specific location for 
+                CacheDir/Logging Name/Preferences/Persistent
         name tag
         :returns: LocationDefault
         """
@@ -134,33 +140,48 @@ class LocalFileStorageManager(object):
         if is_user or alt_name == '':
             alt_name = os.path.expanduser("~")
             if platform == "darwin":
-                cache_dir_def = os.path.join(alt_name,"Library", "Caches", namespace)
-                log_file_def = os.path.join(alt_name, "Library", "Logs", namespace, logfilename)
-                pref_dir_def = os.path.join(alt_name, "Library", "Preferences", namespace)
-                data_dir_def = os.path.join(alt_name, "Library", "Application Support",namespace)
+                cache_dir_def = os.path.join(alt_name,
+                                             "Library",
+                                            "Caches", namespace)
+                log_file_def = os.path.join(alt_name,
+                                            "Library",
+                                            "Logs", namespace, logfilename)
+                pref_dir_def = os.path.join(alt_name,
+                                            "Library",
+                                            "Preferences", namespace)
+                data_dir_def = os.path.join(alt_name,
+                                            "Library",
+                                            "Application Support", namespace)
 
             elif platform == "win32":
                 app_data = os.environ.get("APPDATA", "APPDATA_NOT_SET")
                 cache_dir_def = os.path.join(app_data, namespace)
-                log_file_def = os.path.join(app_data, namespace, "Logs",logfilename)
+                log_file_def = os.path.join(app_data,
+                                            namespace, 
+                                            "Logs", logfilename)
                 pref_dir_def = os.path.join(app_data, namespace, "Preferences")
                 data_dir_def = os.path.join(app_data, namespace, "Data")
 
             elif platform == 'linux':
                 cache_dir_def = os.path.join(alt_name, ".%s" %  namespace)
-                log_file_def = os.path.join(alt_name, ".%s" % namespace, "logs",logfilename)
-                pref_dir_def = os.path.join(alt_name, ".%s" % namespace, "preferences")
-                data_dir_def = os.path.join(alt_name, ".%s" % namespace, "data")
+                log_file_def = os.path.join(alt_name, ".%s" % namespace,
+                                            "logs", logfilename)
+                pref_dir_def = os.path.join(alt_name, ".%s" % namespace,
+                                            "preferences")
+                data_dir_def = os.path.join(alt_name, ".%s" % namespace,
+                                            "data")
             else:
                 raise ValueError("Unknown platform: %s" % platform)
 
         elif alt_name != "":
             cache_dir_def = alt_name
-            log_file_def = os.path.join(alt_name, "logs", namespace, logfilename)
+            log_file_def = os.path.join(alt_name,
+                                        "logs", namespace, logfilename)
             pref_dir_def = os.path.join(alt_name, "preferences")
             data_dir_def = os.path.join(alt_name, "data")
         else:
-            raise ValueError("you should set is_user to true or a alternative variable name with path content")
+            raise ValueError("you should set is_user to true or a" \
+                "alternative variable name with path content")
 
         return LocationDefault(cache_dir_def,
                                log_file_def,
@@ -200,19 +221,24 @@ class LocalFileStorageManager(object):
         Returns root name of site
 
         :param hostname:  hostname as string, e.g. 'https://foo.blah.com'
-        :param path_type: Type of path to return. One of ``LocalFileStorageManager.LOGGING``,
-                          ``LocalFileStorageManager.CACHE``, ``LocalFileStorageManager.PERSISTENT``, where
-                          logging is a path where log- and debug related data should be stored,
-                          cache is a location intended for cache data, e.g. data that can be deleted
-                          without affecting the state of execution, and persistent is a location intended
-                          for data that is meant to be persist. This includes things like settings and
-                          preferences.
+        :param path_type: Type of path to return.
+                            One of ``LocalFileStorageManager.LOGGING``,
+                            ``LocalFileStorageManager.CACHE``,
+                            ``LocalFileStorageManager.PERSISTENT``, where
+                            logging is a path where log- and debug related
+                            data should be stored, cache is a location intended
+                            for cache data, e.g. data that can be deleted
+                          without affecting the state of execution,
+                          and persistent is a location intended
+                          for data that is meant to be persist.
+                          This includes things like settings andpreferences.
 
         :return: Path as string
         """
         if hostname is None:
-            raise DskError("Cannot compute path"
-                           " for local site specific storage - no dsk hostname specified!")
+            raise DskError(
+                "Cannot compute path"
+                " for local site specific storage - no dsk host specified!")
 
         # get site only; https://www.FOO.com:8080 -> www.foo.com
         base_url = urlparse(hostname).netloc.split(":")[0].lower()
@@ -245,7 +271,7 @@ class TextEditorPlatform(object):
             editors = ["xdg-open"]
         else:
             editors = [env_editor]
-        diffscmd = ['xdiff','meld']
+        diffscmd = ['xdiff', 'meld']
     elif system == "darwin":
         if env_editor == '':
             editors = ["open"]
@@ -297,11 +323,11 @@ def get_link_remap(path):
     root_dir = os.environ['NCO_STUDIO_PATH']
     links = os.listdir(root_dir)
     for link in links:
-        if not os.path.islink(os.path.join(root_dir,link)):
+        if not os.path.islink(os.path.join(root_dir, link)):
             continue
 
-        target = os.readlink(os.path.join(root_dir,link))
-        link_dict[target] = os.path.join(root_dir,link)
+        target = os.readlink(os.path.join(root_dir, link))
+        link_dict[target] = os.path.join(root_dir, link)
 
     for key in link_dict.keys():
         if path.startswith(key+'/'):
@@ -314,8 +340,8 @@ def dirmap(path, os_name=None):
     Find the mapping for a path. This will run through all directory mappings
     looking for a path match. If found, returns the remapped path.
     @param path The path to remap
-    @param os_name If specified, remap the path to the specified OS. If None, the
-    current OS is used. Valid values are "linux" and "windows"
+    @param os_name If specified, remap the path to the specified OS. If None,
+            the current OS is used. Valid values are "linux" and "windows"
     @return Remapped path string.
     """
     curr_platform = platform.system().lower()
@@ -335,10 +361,8 @@ def dirmap(path, os_name=None):
                 repl = dirmap[os_name]
                 return path.replace(dirmap[dirmap_platform], repl)
 
-    raise DirmapError("Unable to find dirmap for %spath: '%s'" %(("non-existant ","")[isexists], path))
-
-
-
+    raise DirmapError("Unable to find dirmap for %spath: '%s'" % (
+                                    ("non-existant ","")[isexists], path))
 
 
 def conform_slashes(path):
@@ -349,8 +373,8 @@ def conform_slashes(path):
 
 def conform_path(path, os_name=None):
     """
-    Replace all occurrences of backslashes with a forward slash. This will also normalize the
-    path, and collapses redundant separatores.
+    Replace all occurrences of backslashes with a forward slash.
+    This will also normalize the path, and collapses redundant separatores.
     @param path The path to conform
     """
 
@@ -365,5 +389,3 @@ def conform_path(path, os_name=None):
     conformed_path = os.path.expandvars(conformed_path)
     conformed_path = dirmap.dirmap(conformed_path, os_name=os_name)
     return conformed_path
-
-

@@ -1,5 +1,6 @@
 import traceback
 
+
 def connect():
     sg = None
     try:
