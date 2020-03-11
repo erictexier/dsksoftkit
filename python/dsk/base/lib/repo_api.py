@@ -34,16 +34,17 @@ class RepoApi(object):
         """Clone an accessible remote git address to a top location by using
             name and tag to build the install area
 
-            :param    release_top_location: (str existing branch)  a place to install
+            :param    release_top_location: (str existing branch)
             :param    branch: (str)  an optional existing branch
             :param do_version: add a tag
-            :param new_version: when do_version is incremental try to incremenent
+            :param new_version: when do_version is incremental try incremenent
             :returns ResultRepoInstall: success errors log atag
 
         """
 
         if not os.path.isdir(release_top_location):
-            log.error("release area needs to exist, %s doen't" % release_top_location)
+            log.error("release area needs to exist, %s doen't" % 
+                                                    release_top_location)
             return False
 
         tempdir = GitUtils.get_temp_git_clone_place_dir()
@@ -62,7 +63,8 @@ class RepoApi(object):
             res = [res]
 
         for r in res:
-            if 'fatal' in r: # most likely to belong to the output in case of failure
+            # most likely to belong to the output in case of failure
+            if 'fatal' in r:
                 return ResultRepoInstall(False,res,"")
 
         if new_version == True and do_version == True and branch == "":
@@ -70,7 +72,9 @@ class RepoApi(object):
             self._push_new_version(tempdest)
 
         # copy the temp repo contain in the release area
-        res = self._copy_versionned_to_area(tempdest, release_top_location, branch,do_version)
+        res = self._copy_versionned_to_area(tempdest,
+                                            release_top_location,
+                                            branch,do_version)
         return res
 
     def _push_new_version(self, gitrepo):

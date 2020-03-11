@@ -4,7 +4,7 @@ import sys
 import dsk
 
 DEV_ENV = os.path.dirname(os.path.dirname(dsk.__path__[0]))
-
+DEV_ENV = "/Users/etexier/workspace/mygit/dskenvi"
 # this is part of the test
 try:
     from dsk.base.utils.git_utils import GitUtils

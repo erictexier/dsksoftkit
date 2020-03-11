@@ -6,10 +6,11 @@ import re
 from dsk.base.utils.filesystem_utils import FileSystemUtils
 from dsk.base.utils.msg_utils import MsgUtils as log
 
+
 class GitUtils(object):
     """Class helper to query/clone gitlocation information
     """
-    __markertag = re.compile("\(.*\)")
+    __markertag = re.compile(r'\(.*\)')
 
     def __init__(self,repo_location=""):
         super(GitUtils, self).__init__()
@@ -27,7 +28,7 @@ class GitUtils(object):
 
     @staticmethod
     def _callsubprocess(cmd, git_location):
-        """Take command as a list and a git valid git location.. (place with a .git)
+        """Take command as a list and a valid git location(place with a .git)
         :return:
             a subprocess descriptor
         """
@@ -48,13 +49,20 @@ class GitUtils(object):
             return [""]
         result = p.stdout.readlines()
         p.stdout.close()
-        return [x.rstrip() for x in result] # remove the character return
+        clean = list()
+        # remove the character return
+        for x in result:
+            if isinstance(x, bytes):
+                clean.append(x.decode("utf-8").strip())
+            else:
+                clean.append(x.strip())
+        return clean
 
     @staticmethod
     def _clean_tab(result):
         """clean return format with no tab
         """
-        return [x.replace("\t"," ") for x in result]
+        return [x.replace("\t", " ") for x in result]
 
     def get_git_version(self):
         """Helper to extract tag version
@@ -128,7 +136,9 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git', 'log','-%d' % max_log,'--pretty=format:"%h %ci %an %d"'])
+        cmd.extend(['git',
+                    'log',
+                    '-%d' % max_log,'--pretty=format:"%h %ci %an %d"'])
         p = self._callsubprocess(cmd, self._repolocation)
         return self._getresult(p, cmd)
 
@@ -140,11 +150,15 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git', 'log','-%d' % max_log,'--pretty=format:"%h %ci %an %d"'])
+        cmd.extend(['git',
+                    'log',
+                    '-%d' % max_log,
+                    '--pretty=format:"%h %ci %an %d"'])
         p = self._callsubprocess(cmd, self._repolocation)
         result = self._getresult(p, cmd)
         final = list()
         for r in result:
+            r = str(r)
             ttag = None
             m = self.__markertag.search(r)
             if m:
@@ -155,7 +169,8 @@ class GitUtils(object):
                     rs = r.split()
                     rt = rs[1:3]
                     objdt = self._get_datetime(" ".join(rt))
-                    final.append([ttag, objdt, rs[0][1:], False]) # false for head
+                    # false for head
+                    final.append([ttag, objdt, rs[0][1:], False])
                 elif len(ttag) > 3:
                     is_head = False
                     for i,x in enumerate(ttag):
@@ -211,7 +226,7 @@ class GitUtils(object):
         """This function is not checking the validity of self
 
             :param repo_name: (str) a valid git address
-                              relative_destination: (str) folder under _repolocation
+                        relative_destination: (str) folder under _repolocation
             :param dest: where to clone the repo
             :param branch: optional branch name
             :return: return log of the git call
@@ -233,7 +248,7 @@ class GitUtils(object):
         """This function is not checking the validity of self
 
             :param repo_name: (str) a valid git address
-                              relative_destination: (str) folder under _repolocation
+                        relative_destination: (str) folder under _repolocation
             :param branch: optional branch name
             :return: return log of the git call
 
@@ -252,7 +267,7 @@ class GitUtils(object):
         """This function is not checking the validity of self
 
             :param repo_name: (str) a valid git address
-                              relative_destination: (str) folder under _repolocation
+                        relative_destination: (str) folder under _repolocation
             :param branch: optional branch name
             :return: return log of the git call
 
