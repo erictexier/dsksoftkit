@@ -4,6 +4,7 @@ from pprint import pformat
 
 from dsk.base.tdata.gen_tree import GenTree
 
+
 class PfInfoDb(GenTree):
     """Helper published file
     """
@@ -35,10 +36,10 @@ class PfInfoDb(GenTree):
            "version_number",
            "path",
            "description",
-           "sg_status_list","created_at","image","task"]
+           "sg_status_list", "created_at", "image", "task"]
 
     # to get version without full query of the depend (upstream and downstream)
-    _pat_version = re.compile("\.v[\d]*\.")
+    _pat_version = re.compile(r"\.v[\d]*\.")
 
     def __init__(self):
         super(PfInfoDb, self).__init__()
@@ -53,7 +54,7 @@ class PfInfoDb(GenTree):
 
     def setdata(self, arg):
         # we pop the image ref for readability
-        #print arg
+        # print arg
         if 'image' in arg:
             arg.pop('image')
         if 'version' in arg:
@@ -61,22 +62,22 @@ class PfInfoDb(GenTree):
         if 'sg_mg_asset' in arg:
             arg.pop('sg_mg_asset')
 
-        n = arg.get('code',None)
-        if n != None:
-            self.setName(n.replace(" ","_"))
+        n = arg.get('code', None)
+        if n:
+            self.setName(n.replace(" ", "_"))
 
         self.__dict__.update(arg)
 
-        self.version_number = arg.get('version_number',"NoVersion")
-        if self.version_number == None:
+        self.version_number = arg.get('version_number', "NoVersion")
+        if self.version_number is None:
             self.version_number = "NoVersion"
 
-        self.description = arg.get('description',"")
-        if self.description == None:
+        self.description = arg.get('description', "")
+        if self.description is None:
             self.description = ""
 
-        self.status = arg.get("sg_status_list","na")
-        if self.status == None:
+        self.status = arg.get("sg_status_list", "na")
+        if self.status is None:
             self.status = 'na'
         return True
 
@@ -90,16 +91,15 @@ class PfInfoDb(GenTree):
 
     def get_all_versions(self):
         p_ver = self.getParent()
-        if p_ver != None:
+        if p_ver:
             return p_ver.getChildren()
         return list()
 
     def get_status(self):
         return self.status
 
-    def set_status(self,sta):
+    def set_status(self, sta):
         self.status = sta
-
 
     def get_file_local_path(self):
         return self.path['local_path']
@@ -168,7 +168,7 @@ class PfInfoDb(GenTree):
         from dsk.base.db_helper.db_helper_funct import ShotgunQuery as SQ
 
         result = None
-        if db == None or showobj == None:
+        if db is None or showobj is None:
             return result
 
         for x in self.downstream_published_files:
@@ -177,7 +177,7 @@ class PfInfoDb(GenTree):
                 entity_publish_id = x['id']
                 result = SQ.published_file_query_one(showobj.id,
                                                      entity_publish_id,
-                                                     conn = db.get_conn())
+                                                     conn=db.get_conn())
                 if len(result) == 1:
                     return result[0]
                 return None
@@ -186,9 +186,10 @@ class PfInfoDb(GenTree):
 
             if x['name'] == file_selected:
                 entity_publish_id = x['id']
-                result = SQ.published_file_query_one(showobj.id,
-                                                  entity_publish_id,
-                                                  conn = db.get_conn())
+                result = SQ.published_file_query_one(
+                                                    showobj.id,
+                                                    entity_publish_id,
+                                                    conn=db.get_conn())
                 if len(result) == 1:
                     return result[0]
                 return None
@@ -196,6 +197,4 @@ class PfInfoDb(GenTree):
         return result
 
     def __repr__(self):
-        #return "pft: %s " % self.getName() + "id = %(id)d, depends_on = %(depends_on)s, version_number = %(version_number)s" % self.__dict__
-        #return "pft: %s " % self.getName() + "version_number = %(version_number)s" % self.__dict__
         return pformat(self.__dict__)

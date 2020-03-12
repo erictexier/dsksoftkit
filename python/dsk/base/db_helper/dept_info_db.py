@@ -1,8 +1,10 @@
 from dsk.base.tdata.gen_tree import GenTree
 
+
 class DeptInfoDb(GenTree):
+
     @staticmethod
-    def compare(a,b):
+    def compare(a, b):
         return cmp(a.id, b.id)
 
     def __init__(self):

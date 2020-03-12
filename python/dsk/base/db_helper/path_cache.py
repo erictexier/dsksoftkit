@@ -20,7 +20,6 @@ import sys
 import os
 import itertools
 
-
 import shotgun_api3
 json = shotgun_api3.shotgun.json
 
@@ -42,6 +41,7 @@ SG_ENTITY_NAME_FIELD = "code"
 SG_PIPELINE_CONFIG_FIELD = "pipeline_configuration"
 
 log = LogManager.get_logger(__name__)
+
 
 class PathCache(object):
     """

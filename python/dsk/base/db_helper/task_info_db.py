@@ -24,7 +24,7 @@ class TaskInfoDb(GenTree):
 
         self.id = arg.get('id')
         self.setName("%s" % self.id)
-        self.status = arg.get('sg_status_list',"")
+        self.status = arg.get('sg_status_list', "")
         return True
 
     def assigned_ids(self):

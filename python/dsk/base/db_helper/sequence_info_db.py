@@ -1,5 +1,6 @@
 from dsk.base.tdata.gen_tree import GenTree
 
+
 class SequenceInfoDb(GenTree):
 
     def __init__(self):
@@ -10,7 +11,7 @@ class SequenceInfoDb(GenTree):
         self._currentshot = ""
         self.id = -1
 
-    def set_current_shot(self,shot_name):
+    def set_current_shot(self, shot_name):
         if shot_name in self.get_shot_names():
             self._currentshot = shot_name
             return True

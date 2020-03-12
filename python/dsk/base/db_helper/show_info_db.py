@@ -4,6 +4,7 @@ from dsk.base.db_helper.assetlist_info_db import AssetListInfoDb
 from dsk.base.db_helper.pipeconfig_info_db import PipeConfigListInfoDb
 from dsk.base.utils.msg_utils import MsgUtils as log
 
+
 class ShowInfoDb(GenTree):
     def __init__(self):
         super(ShowInfoDb, self).__init__()
@@ -21,8 +22,7 @@ class ShowInfoDb(GenTree):
         self['TaskAssign'] = GenTree()
         self.shot_order_dict = None
 
-
-    def setdata(self,idi,label = ""):
+    def setdata(self, idi, label=""):
         self.id = idi
         self.label = label
         return True
@@ -45,7 +45,6 @@ class ShowInfoDb(GenTree):
     def get_task_list(self):
         return self['TaskAssigned'].getChildren()
 
-
     def reset_sequences_and_assets(self):
         self['Sequences'].resetChildren()
         self['Assets'].resetChildren()
@@ -53,7 +52,7 @@ class ShowInfoDb(GenTree):
         self['Assets'] = AssetListInfoDb()
         self.shot_order_dict = dict()
 
-    def set_shot_order_table(self, shot_order_dict = None):
+    def set_shot_order_table(self, shot_order_dict=None):
         self.shot_order_dict = shot_order_dict
         self.shot_order_dict = dict()
         for seqo in self['Sequences'].getChildren():
@@ -65,10 +64,8 @@ class ShowInfoDb(GenTree):
     def get_shot_order_table(self):
         return self.shot_order_dict
 
-
-
     """ shots stuff """
-    def init_with_shots(self,shot_list):
+    def init_with_shots(self, shot_list):
         """Take a list of ShotInfoDb and group it by sequence"
         """
         for s in shot_list:
@@ -81,8 +78,7 @@ class ShowInfoDb(GenTree):
                     self['Sequences'].addChild(new_seq)
                 self['Sequences'][seq].addChild(s)
 
-
-    def set_current_sequence(self,seq_name):
+    def set_current_sequence(self, seq_name):
         seqnames = self.get_sequence_names()
         if seq_name in seqnames:
             self._currentsequence = seq_name
@@ -96,7 +92,7 @@ class ShowInfoDb(GenTree):
         return self._currentsequence
 
     def get_current_sequence_obj(self):
-        if self._currentsequence== "":
+        if self._currentsequence == "":
             return None
         return self['Sequences'][self._currentsequence]
 
@@ -114,7 +110,7 @@ class ShowInfoDb(GenTree):
         return self['Sequences'].childNames()
 
     """ asset stuff """
-    def init_with_assets(self,asset_list):
+    def init_with_assets(self, asset_list):
         """
         take a list of AssetInfoDb and group it by sequence"
         """
@@ -143,12 +139,12 @@ class ShowInfoDb(GenTree):
         to_query = list()
         all_ready_there = list()
         for s in asset_names:
-            if not s in in_all_ready:
+            if s not in in_all_ready:
                 to_query.append(s)
             else:
                 ch = assets.getChildByName(s)
-                if ch == None:
-                    log.error("cannot retrieve asset: %s",s)
+                if ch is None:
+                    log.error("cannot retrieve asset: %s", s)
                 else:
                     all_ready_there.append(ch)
 
@@ -171,7 +167,7 @@ class ShowInfoDb(GenTree):
                 self._currentasset = cas.getName()
         return self._currentasset
 
-    def set_current_asset(self,asset_name):
+    def set_current_asset(self, asset_name):
         if asset_name in self.get_assetlist_names():
             self._currentasset = asset_name
         else:
@@ -183,14 +179,14 @@ class ShowInfoDb(GenTree):
         for pc in task_list:
             taskp.addChild(pc)
 
-    def get_usertask_list(self,db, userlogin):
+    def get_usertask_list(self, db, userlogin):
         from dsk.base.db_helper.db_helper_funct import ShotgunQuery as SQ
         user = db.get_user_dict(userlogin)
         res = list()
         if user:
             ch = self['TaskAssign'].getChildren()
             if len(ch) == 0:
-                task_list = SQ.tasks_by_name(self.id, conn = db.get_conn())
+                task_list = SQ.tasks_by_name(self.id, conn=db.get_conn())
                 self.init_with_Task(task_list)
             ch = self['TaskAssign'].getChildren()
 
@@ -215,16 +211,17 @@ class ShowInfoDb(GenTree):
                 return self.get_current_config_path(x.getName())
         return self.get_current_config_path(adefname)
 
-    def get_current_confpipe(self,db=None):
+    def get_current_confpipe(self, db=None):
         """Set to the first found"""
         if self._current_configpipe == "":
             ass = self.get_configpipe()
             if ass.nbOfChildren() > 0:
                 cas = ass.getChildren()[0]
                 self._current_configpipe = cas.getName()
-            elif db != None:
-                from dsk.base.db_helper.db_helper_funct import ShotgunQuery as SQ
-                res = SQ.pipeline_config_with_id(self.id, conn = db.get_conn())
+            elif db:
+                from dsk.base.db_helper.db_helper_funct import ShotgunQuery
+                res = ShotgunQuery.pipeline_config_with_id(self.id,
+                                                           conn=db.get_conn())
                 self.init_with_pipeline_config(res)
                 ass = self.get_configpipe()
                 if ass.nbOfChildren() > 0:
@@ -246,6 +243,6 @@ class ShowInfoDb(GenTree):
 
     def get_current_config_path(self, confpipe_name):
         obj = self.get_configpipe_obj(confpipe_name)
-        if obj == None:
+        if obj is None:
             return ""
         return obj.get_linux_path()

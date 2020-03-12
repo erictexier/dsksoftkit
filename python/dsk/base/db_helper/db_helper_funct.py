@@ -18,11 +18,11 @@ from dsk.base.db_helper.task_info_db import TaskInfoDb
 from dsk.base.db_helper.pipeconfig_info_db import PipeConfigInfoDb
 from dsk.base.db_helper.settings_info_db import SettingsInfoDb
 
-CurrentProjects = set(["xxxx", "yyyy","zzzz","tttt"])
+CurrentProjects = set(["xxxx", "yyyy", "zzzz", "tttt"])
 IgnoreProject = set(["site",
                      ])
 
-##################################################################################
+
 def show_default(show_name, idi, show_label):
     """Build a ShowInfoDb
     """
@@ -32,7 +32,8 @@ def show_default(show_name, idi, show_label):
         return s
     return None
 
-def shot_default(code, idi = -1, cut_order = -1,assets = None,status='wtg'):
+
+def shot_default(code, idi=-1, cut_order=-1, assets=None, status='wtg'):
     """ build a Shot id
     """
     s = ShotInfoDb()
@@ -40,12 +41,14 @@ def shot_default(code, idi = -1, cut_order = -1,assets = None,status='wtg'):
         return s
     return None
 
-def asset_default(code, idi,asset_type,status):
+
+def asset_default(code, idi, asset_type, status):
     s = AssetInfoDb()
     s.setName(code)
-    if s.setdata(idi, asset_type,status):
+    if s.setdata(idi, asset_type, status):
         return s
     return None
+
 
 def dept_default(code, idi, dept_type, label):
     s = DeptInfoDb()
@@ -61,21 +64,24 @@ def step_default(code, idi, arg):
         return s
     return None
 
+
 def version_default(data):
-    n = data.get('code',None)
+    n = data.get('code', None)
     if n:
         v = VersionInfoDb()
         v.setdata_shotgun(data)
         return v
     return None
 
+
 def screenroom_default(data):
-    n = data.get('code',None)
+    n = data.get('code', None)
     if n:
         v = ScreenRoomInfoDb()
         v.setdata_shotgun(data)
         return v
     return None
+
 
 def pft_default(data):
     pft = PftInfoDb()
@@ -83,11 +89,13 @@ def pft_default(data):
         return pft
     return None
 
+
 def pf_default(data):
     pft = PfInfoDb()
     if pft.setdata(data):
         return pft
     return None
+
 
 def settings_default(data):
     settings = SettingsInfoDb()
@@ -95,11 +103,13 @@ def settings_default(data):
         return settings
     return None
 
+
 def user_default(data):
     user = UserInfoDb()
     if user.setdata(data):
         return user
     return None
+
 
 def task_default(data):
     task = TaskInfoDb()
@@ -107,13 +117,14 @@ def task_default(data):
         return task
     return None
 
+
 def pipeconfig_default(data):
     pc = PipeConfigInfoDb()
     if pc.setdata(data):
         return pc
     return None
 
-##################################################################################
+
 # raw query
 class ShotgunQuery(object):
     _settings = {"project_settings":"CustomEntity24"}
@@ -145,8 +156,8 @@ class ShotgunQuery(object):
         bad_statuses = ['omt']
         res = conn.find('Shot',
                         [['project','is', {'type':'Project', 'id':show_id}],
-                         ['sg_status_list','not_in',bad_statuses]],
-                        ['code','sg_cut_order','assets','sg_status_list'])
+                         ['sg_status_list', 'not_in', bad_statuses]],
+                        ['code', 'sg_cut_order', 'assets', 'sg_status_list'])
 
         return [call_default(x['code'],
                              x['id'],
@@ -154,44 +165,46 @@ class ShotgunQuery(object):
                              x['assets'],x['sg_status_list']) for x in res]
 
     @staticmethod
-    def asset_list_with_id(show_id, conn = None, call_default = asset_default):
+    def asset_list_with_id(show_id, conn=None, call_default=asset_default):
         """ return all asset for a given show
         """
         if conn == None:
             conn = connect_to_shotgun()
         bad_statuses = ['omt']
         res = conn.find('Asset',
-                        [['project','is', {'type':'Project', 'id':show_id}],
-                        ['sg_status_list','not_in',bad_statuses]],
-                        ['code','sg_asset_type','sg_status_list'])
+                        [['project','is', {'type':'Project', 'id': show_id}],
+                        ['sg_status_list', 'not_in', bad_statuses]],
+                        ['code', 'sg_asset_type', 'sg_status_list'])
 
 
         return [call_default(x['code'],
                              x['id'],
-                             x['sg_asset_type'],x['sg_status_list']) for x in res]
+                             x['sg_asset_type'],
+                             x['sg_status_list']) for x in res]
 
 
     @staticmethod
-    def shots_with_id(show_id, shot_names, conn = None, call_default = shot_default):
+    def shots_with_id(show_id,
+                      shot_names, conn=None, call_default=shot_default):
         """ return a list of shot for a given show and code list
         """
         if conn == None:
             conn = connect_to_shotgun()
         bad_statuses = ['omt']
         res = conn.find('Shot',
-                        [['project','is', {'type':'Project', 'id':show_id}],
+                        [['project','is', {'type': 'Project', 'id': show_id}],
                          ["code", "in", shot_names],
-                         ['sg_status_list','not_in',bad_statuses]],
-                        ['code','sg_cut_order','assets','sg_status_list'])
+                         ['sg_status_list', 'not_in', bad_statuses]],
+                        ['code','sg_cut_order', 'assets', 'sg_status_list'])
 
         return [call_default(x['code'],
                              x['id'],
                              x['sg_cut_order'],
                              x['assets'],x['sg_status_list']) for x in res]
 
-
     @staticmethod
-    def assets_with_id(show_id, asset_names, conn = None, call_default = asset_default):
+    def assets_with_id(show_id, asset_names,
+                       conn=None, call_default=asset_default):
         """ return a list of asset for a given show
         """
         if conn == None:
@@ -202,9 +215,11 @@ class ShotgunQuery(object):
                          ["code", "in", asset_names],
                         ['sg_status_list','not_in',bad_statuses]],
                         ['code','sg_asset_type','sg_status_list'])
-        #asset = conn.find('Asset', [['sg_status_list', 'is', 'omt']], ["code"])
 
-        return [call_default(x['code'],x['id'],x['sg_asset_type'],x['sg_status_list']) for x in res]
+        return [call_default(x['code'],
+                             x['id'],
+                             x['sg_asset_type'],
+                             x['sg_status_list']) for x in res]
 
     @staticmethod
     def dept_list_with_id(conn = None, call_default = dept_default):

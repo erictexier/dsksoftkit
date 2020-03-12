@@ -9,7 +9,7 @@ class PipeConfigListInfoDb(GenTree):
 
 
 class PipeConfigInfoDb(GenTree):
-    PCF = ["code","linux_path", "windows_path", "mac_path","users"]
+    PCF = ["code", "linux_path", "windows_path", "mac_path", "users"]
 
     def __init__(self):
         super(PipeConfigInfoDb, self).__init__()
@@ -22,7 +22,7 @@ class PipeConfigInfoDb(GenTree):
     def setdata(self, arg):
 
         # we pop the image ref for readability
-        code = arg.get('code',"")
+        code = arg.get('code', "")
         if code != "":
             self.setName(code)
             arg.pop('code')
@@ -30,7 +30,7 @@ class PipeConfigInfoDb(GenTree):
                 arg.pop('type')
             if 'users' in arg:
                 users = arg.pop('users')
-                #users = arg['users']
+                # users = arg['users']
                 self.users_id = list()
                 for u in users:
                     self.users_id.append(u['id'])

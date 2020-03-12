@@ -2,12 +2,20 @@ import sys
 
 from dsk.base.utils import shotgun_utils
 import threading
-class TimeoutError(Exception): pass
+
+
+class TimeoutError(Exception):
+    pass
+
 
 def timelimit(timeout):
+
     def internal(function):
+
         def internal2(*args, **kw):
+
             class Calculator(threading.Thread):
+
                 def __init__(self):
                     threading.Thread.__init__(self)
                     self.result = None
@@ -30,9 +38,15 @@ def timelimit(timeout):
         return internal2
     return internal
 
-def connect_to_shotgun(sg_server=None, sg_script_name=None, sg_script_key=None):
+
+def connect_to_shotgun(sg_server=None,
+                       sg_script_name=None,
+                       sg_script_key=None):
     return shotgun_utils.connect()
 
+
 @timelimit(5)
-def connect_to_shotgun_time_out(sg_server=None, sg_script_name=None, sg_script_key=None):
+def connect_to_shotgun_time_out(sg_server=None,
+                                sg_script_name=None,
+                                sg_script_key=None):
     return shotgun_utils.connect()
