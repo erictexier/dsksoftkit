@@ -232,8 +232,10 @@ class ShotgunQuery(object):
 
         res = conn.find('Department', 
                         [], # not project specific
-                        ['code', 'name','id','department_type']) # 'list_order'
-        return [call_default(x['code'],x['id'],x['department_type'],x['name']) for x in res]
+                        ['code', 'name','id','department_type'])
+        return [call_default(x['code'],
+                             x['id'],
+                             x['department_type'],x['name']) for x in res]
 
     @staticmethod
     def dept_names(conn = None):
@@ -346,13 +348,15 @@ class ShotgunQuery(object):
 
         filters = list()
         if project_id != -1:
-            filters.append(['project','is', {'type':'Project', 'id': project_id}])
+            filters.append(['project', 'is', {'type':'Project',
+                                                'id': project_id}])
         fields = ScreenRoomInfoDb.PLF
         #fields = []
         res = conn.find('Playlist',
                         filters = filters,
                         fields = fields,
-                        order   = [{'field_name':'created_at','direction':'desc'}])
+                        order   = [{'field_name': 'created_at',
+                                    'direction':'desc'}])
 
         result = list()
         for x in res:
@@ -726,7 +730,7 @@ class ShotgunQuery(object):
             :param conn: a shotgun connection
 
         """
-        if conn == None:
+        if conn is None:
             conn = connect_to_shotgun()
         status_list_except = ['qd','sbmt','fld']
         filters = [['project', 'is', {'type': 'Project', 'id': showid}]]
@@ -761,10 +765,10 @@ class ShotgunQuery(object):
         if conn == None:
             conn = connect_to_shotgun()
 
-        filters = [['project','is', {'type':'Project', 'id': show_id}]]
+        filters = [['project', 'is', {'type': 'Project', 'id': show_id}]]
         filters.append(['entity','is', { 'type': 'Asset', 'id': asset_id}])
         if version_type:
-            filters.append(['sg_version_type','in', version_type])
+            filters.append(['sg_version_type', 'in', version_type])
         result = cls._summary_asset_version(conn, filters, query_field)
         return result
 
@@ -784,8 +788,11 @@ class ShotgunQuery(object):
         filters.append(['entity', 'type_is', 'Asset'])
         summary = conn.summarize('Version',
                                  filters,
-                                 summary_fields=[{'field':'id','type':'maximum'}],
-                                 grouping=[{'field':'entity','type':'exact','direction':'asc'}] )
+                                 summary_fields=[{'field':'id',
+                                                  'type':'maximum'}],
+                                 grouping=[{'field': 'entity',
+                                            'type':'exact',
+                                            'direction':'asc'}] )
 
         # now collect all the version ids
         ver_id_list = []
@@ -804,7 +811,7 @@ class ShotgunQuery(object):
                 result.append(v)
         return result
 
-    #####################################################################
+    # ##################################################################
     @staticmethod
     def show_id_by_name(conn, project_name):
         """find one show from tank_name
@@ -815,7 +822,9 @@ class ShotgunQuery(object):
         """
         if conn == None:
             conn = connect_to_shotgun()
-        return conn.find_one("Project",[['tank_name','is',project_name]],None)
+        return conn.find_one("Project",
+                             [['tank_name', 'is', project_name]],
+                             None)
 
     @staticmethod
     def shot_id_by_code(conn, project_id, shot_list_code):
@@ -831,7 +840,9 @@ class ShotgunQuery(object):
 
         list_id = list()
         for s in shot_list_code:
-            list_id.append(conn.find_one('Shot', [['code', 'is', s],['project', 'is', project_id]],None))
+            list_id.append(conn.find_one('Shot',
+                                         [['code', 'is', s],
+                                         ['project', 'is', project_id]], None))
         return list_id
 
     @staticmethod
@@ -848,9 +859,10 @@ class ShotgunQuery(object):
 
         list_id = list()
         for s in asset_list_code:
-            list_id.append(conn.find_one('Asset', [['code', 'is', s],['project', 'is', project_id]],None))
+            list_id.append(conn.find_one('Asset',
+                                         [['code', 'is', s],
+                                         ['project', 'is', project_id]],None))
         return list_id
-
 
     @staticmethod
     def search_video_version_query(conn,
@@ -858,30 +870,29 @@ class ShotgunQuery(object):
                                    entity_list,
                                    submit_login_list=None,
                                    status_list=None,
-                                   version_type = VersionInfoDb.VC,
-                                   fields  = VersionInfoDb.VF,
+                                   version_type=VersionInfoDb.VC,
+                                   fields=VersionInfoDb.VF,
                                    limit=10):
         """Search the version matching a certain criteria (not finish)
 
             :param project_id: a project id
             :param entity_list: a list of entity id
             :param submit_login_list:
-            :param entity_list: can provide directly the entity list, otherwise it will be derived from the entity type and code
+            :param entity_list: can provide directly the entity list,
+                    otherwise it will be derived from the entity type and code
 
         """
         if conn == None:
             conn = connect_to_shotgun()
 
-        filters = [ ('sg_version_type', 'in', version_type),
-                    ('project','is', project_id),
-                    ('entity','is_not', None),
-                     ]
+        filters = [('sg_version_type', 'in', version_type),
+                   ('project', 'is', project_id),
+                   ('entity', 'is_not', None)]
 
         filters.append(('entity', 'in', entity_list))
 
         if submit_login_list:
             filters.append (('sg_login', 'in', submit_login_list))
-
 
         if status_list:
             filters.append (('sg_status_list', 'in', status_list))
@@ -889,7 +900,8 @@ class ShotgunQuery(object):
         res = conn.find('Version',
                         filters = filters,
                         fields = fields,
-                        order   = [{'field_name':'created_at','direction':'desc'}],
+                        order   = [{'field_name':'created_at',
+                                    'direction':'desc'}],
                         limit   = limit)
         return res
 
@@ -901,19 +913,20 @@ class ShotgunQuery(object):
                              dept_list=None,
                              submit_login_list=None,
                              status_list=None,
-                             version_type = VersionInfoDb.VC,
-                             fields  = VersionInfoDb.VF,
+                             version_type=VersionInfoDb.VC,
+                             fields=VersionInfoDb.VF,
                              limit=10):
 
-        res = cls.search_video_version_query(conn,
-                                             project_id,
-                                             entity_list,
-                                             dept_list = dept_list,
-                                             submit_login_list = submit_login_list,
-                                             status_list = status_list,
-                                             version_type = version_type,
-                                             fields  = fields,
-                                             limit=limit)
+        res = cls.search_video_version_query(
+                                    conn,
+                                    project_id,
+                                    entity_list,
+                                    dept_list=dept_list,
+                                    submit_login_list=submit_login_list,
+                                    status_list=status_list,
+                                    version_type=version_type,
+                                    fields=fields,
+                                    limit=limit)
         result = list()
         for x in res:
             v = version_default(x)
@@ -921,9 +934,7 @@ class ShotgunQuery(object):
                 result.append(v)
         return result
 
-
-
-    #####################################################################
+    # ####################################################################
     @staticmethod
     def project_list(conn, tank_names):
         """Return a list of all the projects in the Shotgun database.
@@ -934,36 +945,37 @@ class ShotgunQuery(object):
         """
         if conn == None:
             return list()
-        bad_statuses = ['na','omt']
+        bad_statuses = ['na', 'omt']
 
         if tank_names == None:
             return conn.find('Project',
-                             [['sg_status','not_in',bad_statuses]],
-                             ['type', 'name', 'sg_code','id','active','tank_name'])
+                             [['sg_status', 'not_in', bad_statuses]],
+                             ['type', 'name', 'sg_code', 'id',
+                              'active', 'tank_name'])
         else:
             if isinstance(tank_names, basestring):
                 tank_names = [tank_names]
             return conn.find('Project',
-                             [['sg_status','not_in',bad_statuses],
-                              ['tank_name','in',tank_names]],
-                             ['type', 'name', 'sg_code','id','active','tank_name'])
-
+                             [['sg_status', 'not_in', bad_statuses],
+                              ['tank_name', 'in', tank_names]],
+                             ['type', 'name', 'sg_code', 'id',
+                              'active', 'tank_name'])
 
     @staticmethod
     def db_user(conn = None, fields = ['login','firstname','lastname']):
         """Query user information
 
             :param conn: the active shotgun connection, default None
-            :param fields: a list of field. optional default=['login','firstname','lastname']
+            :param fields: a list of field. optional 
+                            default=['login','firstname','lastname']
         """
         # Get sg conn
         if conn == None:
             conn = connect_to_shotgun()
         return conn.find('HumanUser', [], fields)
 
-
     @staticmethod
-    def db_group_user(project_name, group_name,conn = None):
+    def db_group_user(project_name, group_name, conn=None):
         """Filter through the group
 
             :param conn: the active shotgun connection, default None
@@ -978,9 +990,9 @@ class ShotgunQuery(object):
         if conn == None:
             conn = connect_to_shotgun()
 
-
         # Get users from group
-        groups = conn.find_one('Group', [['code', 'is', group_name]], ['users'])
+        groups = conn.find_one('Group', 
+                               [['code','is', group_name]], ['users'])
         if groups and 'users' in groups:
             users = groups['users']
         else:
@@ -990,7 +1002,9 @@ class ShotgunQuery(object):
             # Get user_name
             user_name = user['name']
             # Get sg human user from user_name
-            human_user = conn.find_one('HumanUser', [['name', 'is', user_name]], ['login'])
+            human_user = conn.find_one('HumanUser',
+                                        [['name', 'is', user_name]],
+                                        ['login'])
             if human_user != []:
                 # Get email
                 login = human_user['login']
@@ -1009,24 +1023,24 @@ class ShotgunQuery(object):
                 ShotgunQuery.list_version_status()
 
         """
-        if conn == None:
+        if conn is None:
             conn = connect_to_shotgun()
-        return conn.schema_field_read('Version')['sg_status_list']['properties']['valid_values']['value']
+        X = conn.schema_field_read('Version')
+        return X['sg_status_list']['properties']['valid_values']['value']
 
     @staticmethod
     def download_icon(image_url, dest, conn = None):
         """Download an image from the server to local disk
 
             :param image_url: a valid address for the image
-            :param dest: a fullpath to an image on disk. directory needs to exist
+            :param dest: a fullpath to image on disk. directory needs to exist
             :return : bool, True if success
         """
         from sgtk.util.shotgun import download_url
-        if conn == None:
+        if conn is None:
             conn = connect_to_shotgun()
         try:
             download_url(conn, image_url, dest)
         except:
             return False
         return True
-
