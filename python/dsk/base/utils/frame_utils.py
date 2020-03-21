@@ -3,8 +3,6 @@ import re
 import logging
 
 
-# Single consecutive frame range
-# ------------------------------
 class FrameRangeError(ValueError):
     pass
 
@@ -12,14 +10,16 @@ class FrameRangeError(ValueError):
 class FrameRange(object):
     """FrameRange(object):
         def __init__(self, start, stop=None, step=None):
-    
-    This class represents a contiguous frame range from start to stop, INCLUSIVE, with an optional
-    frame step.
-    
+
+    This class represents a contiguous frame range from start to stop,
+    INCLUSIVE, with an optional frame step.
+
     Start can be a string that will be parsed, or an iterable of 2 or 3 ints.
-    If a string is given that cannot be parsed, or stop < start, FrameRangeError will be raised.
+    If a string is given that cannot be parsed, or stop < start,
+                                        FrameRangeError will be raised.
     """
-    _pat = re.compile(ur"""(?P<start>-?\d+)-(?P<stop>-?\d+)(?:x(?P<step>\d+))?""")
+    _pat = re.compile(
+            r"""(?P<start>-?\d+)-(?P<stop>-?\d+)(?:x(?P<step>\d+))?""")
 
     __slots__ = ("__weakref__", "_rng")
 
@@ -27,60 +27,68 @@ class FrameRange(object):
         if stop is None:
             if hasattr(start, "ituple"):
                 # Also for subclasses of FrameRange
-                start,stop,step = start.ituple
+                start, stop, step = start.ituple
             elif hasattr(start, "__iter__"):
-                # A list or tuple of endpoints and optional step, like (1,) or (1,10) or (1,10,2)
                 start = tuple(start)
                 if len(start) > 3:
-                    raise FrameRangeError("expected start,stop,step: not %d-item sequence" %len(start))
-                start,stop,fx = (start + (stop,None,None))[:3]
+                    raise FrameRangeError(
+                        "expected start,stop,step:"
+                        "not %d-item sequence" % len(start))
+                start, stop, fx = (start + (stop, None, None))[:3]
                 step = fx or step
             else:
                 # A frame range string
-                dic = getattr(self._pat.search(str(start)), "groupdict", dict)()
+                dic = getattr(self._pat.search(str(start)),
+                              "groupdict", dict)()
                 if dic:
                     start = dic["start"]
                     stop = dic.get("stop")
                     step = dic.get("step")
-                elif isinstance(start, (int,long,float)) or start.isdigit() or \
-                 (start and start[0] == '-' and start[1:].isdigit()):
+                elif (isinstance(start, (int, long, float)) or
+                      start.isdigit() or
+                      (start and start[0] == '-' and start[1:].isdigit())):
                     stop = start
                     step = 1
                 else:
-                    raise FrameRangeError("bad frame range string: %s" %start)
+                    raise FrameRangeError("bad frame range string: %s" % start)
         start = int(start)
         stop = int(stop or 0)
         step = max(1, min(int(step or 1), stop - start + 1))
         self._rng = (start, stop+1, step)
         if stop < start:
-            raise FrameRangeError("bad frame range: %s" %self)
+            raise FrameRangeError("bad frame range: %s" % self)
 
     # string reps
     # ------------------------------
     def __repr__(self):
-        return "%s(%d,%d,%d)" %(self.__class__.__name__, self.start, self.stop, self.step)
+        return "%s(%d,%d,%d)" % (self.__class__.__name__,
+                                 self.start,
+                                 self.stop,
+                                 self.step)
 
     def __str__(self):
-        if self.issingleframe: return str(self.start)
+        if self.issingleframe:
+            return str(self.start)
         return self.fullstr
 
     @property
     def fullstr(self):
         if self.step == 1:
-            return "%d-%d" %(self.start, self.stop)
-        return "%d-%dx%d" %(self.start, self.stop, self.step)
+            return "%d-%d" % (self.start, self.stop)
+        return "%d-%dx%d" % (self.start, self.stop, self.step)
 
     # comparisons
-    # ------------------------------  
+    # ------------------------------
     def __iter__(self):
         return iter(self.xrange())
 
     def __contains__(self, fr):
-        if fr < self._rng[0] or fr >= self._rng[1]: return False
+        if fr < self._rng[0] or fr >= self._rng[1]:
+            return False
         return fr in self.xrange()
 
     def __len__(self):
-        x = ((self._rng[1] - self._rng[0]) + self.step-1) / self.step
+        x = ((self._rng[1] - self._rng[0]) + self.step - 1) / self.step
         return max(0, x)
 
     def __eq__(self, obj):
@@ -99,16 +107,24 @@ class FrameRange(object):
         return hash(self._rng)
 
     def __lt__(self, obj):
-        return (self.start, self.stop, len(self)) < (obj.start, obj.stop, len(obj))
+        return (self.start, self.stop, len(self)) < (obj.start,
+                                                     obj.stop,
+                                                     len(obj))
 
     def __gt__(self, obj):
-        return (self.start, self.stop, len(self)) > (obj.start, obj.stop, len(obj))
+        return (self.start, self.stop, len(self)) > (obj.start,
+                                                     obj.stop,
+                                                     len(obj))
 
     def __le__(self, obj):
-        return (self.start, self.stop, len(self)) <= (obj.start, obj.stop, len(obj))
+        return (self.start, self.stop, len(self)) <= (obj.start,
+                                                      obj.stop,
+                                                      len(obj))
 
     def __ge__(self, obj):
-        return (self.start, self.stop, len(self)) >= (obj.start, obj.stop, len(obj))
+        return (self.start, self.stop, len(self)) >= (obj.start,
+                                                      obj.stop,
+                                                      len(obj))
 
     # other props
     # ------------------------------
@@ -129,22 +145,22 @@ class FrameRange(object):
 
     @property
     def tuple(self):
-        """tuple of frame start,exclusive stop,step for sequence of input files, or degenerate values.
-        stop is NOT inclusive"""
+        """tuple of frame start,exclusive stop,step for sequence of input
+        files, or degenerate values. stop is NOT inclusive"""
         return self._rng
 
     @property
     def ituple(self):
-        """tuple of frame start,inclusive stop,step for sequence of input files, or degenerate values.
-        stop IS inclusive"""
+        """tuple of frame start,inclusive stop,step for sequence of input
+        files, or degenerate values. stop IS inclusive"""
         return (self.start, self.stop, self.step)
 
-    @property    
+    @property
     def issingleframe(self):
         """returns True if this frame range contains only one frame"""
         return len(self) == 1
 
-    @property    
+    @property
     def iscontiguous(self):
         """always returns True for FrameRange objects"""
         return True
@@ -155,20 +171,23 @@ class FrameRange(object):
     def xrange(self):
         return xrange(*self.tuple)
 
+
 class FrameRanges(object):
     """FrameRanges(object):
         __init__(self, *args):
 
-    This class represents a sequence of frames with a minimum list of FrameRange objects.
-    It can represent any sequence of frames, including an empty frame range.
-
-    FrameRanges can be initialized with any number of FrameRange objects. Or it can be given
-    a comma-separated string. In addition, frames can be excluded from the range using a tilde.
+    This class represents a sequence of frames with a minimum list of
+    FrameRange objects. It can represent any sequence of frames, including
+    an empty frame range.
+    FrameRanges can be initialized with any number of FrameRange objects.
+    Or it can be given a comma-separated string. In addition, frames can be
+    excluded from the range using a tilde.
     For example these result in the same FrameRanges:
-      print FrameRanges(FrameRange("1-10"), FrameRange("20-30"), FrameRange(16))
-      print FrameRanges("1-30~11-19,16")
+       FrameRanges(FrameRange("1-10"), FrameRange("20-30"), FrameRange(16))
+       FrameRanges("1-30~11-19,16")
 
-    FrameRange and FrameRanges can be added and excluded by using the add() or exclude() methods.
+    FrameRange and FrameRanges can be added and excluded by using the add()
+    or exclude() methods.
     """
     kRangeDelim = ','
     kExcludeDelim = '~'
@@ -176,19 +195,21 @@ class FrameRanges(object):
 
     def __init__(self, *args):
         self._ranges = []
-        if len(args) == 1 and isinstance(args[0], (str,unicode)):
+        if len(args) == 1 and isinstance(args[0], (str, unicode)):
             # A frame range string of comma separated subranges
             txtRanges = args[0].split(self.__class__.kRangeDelim)
             args = []
             for txt in txtRanges:
-                txt = [r.strip() for r in txt.split(self.__class__.kExcludeDelim)]
+                txt = [
+                    r.strip() for r in txt.split(self.__class__.kExcludeDelim)]
                 if not txt[0]:
                     continue
                 excludeRanges = [FrameRange(xtxt) for xtxt in txt[1:] if xtxt]
                 if not excludeRanges:
                     args.append(FrameRange(txt[0]))
                 else:
-                    # Exclude frames from a subrange, and then add those FrameRange objects
+                    # Exclude frames from a subrange, and then add those
+                    # FrameRange objects
                     subrng = FrameRanges(FrameRange(txt[0]))
                     subrng.exclude(*tuple(excludeRanges))
                     args.extend(subrng._ranges)
@@ -203,12 +224,12 @@ class FrameRanges(object):
 
             # Determine increment (assume step is always <= self.maxstep)
             step = 1
-            while step < self.maxstep and sor+step+step <= eor:
-                if sor+step in frames and sor+step+step in frames: break
+            while step < self.maxstep and sor + step + step <= eor:
+                if sor + step in frames and sor + step + step in frames:
+                    break
                 step += 1
-            #print ">", step, sor+step, sor+step+step, step > self.maxstep, sor+step+step > eor
             if step > self.maxstep or sor+step+step > eor:
-                rngs.append(FrameRange(sor))                    # Add single frame
+                rngs.append(FrameRange(sor))    # Add single frame
                 frames.remove(sor)
                 continue
 
@@ -222,15 +243,15 @@ class FrameRanges(object):
             # Create range
             eor = x-step
             if sor+step != eor:
-                rngs.append(FrameRange(sor,eor,step))           # Add current range
+                rngs.append(FrameRange(sor, eor, step))   # Add current range
             else:
-                rngs.append(FrameRange(sor))                    # Add disjoint frame
-                frames.add(eor)                                 # Put last one back
+                rngs.append(FrameRange(sor))             # Add disjoint frame
+                frames.add(eor)                          # Put last one back
                 continue
-                
+
         # Add final disjoint frames
-        while frames: 
-            rngs.append(FrameRange(frames.pop()))               # Add single frame
+        while frames:
+            rngs.append(FrameRange(frames.pop()))       # Add single frame
 
         rngs.sort()
         return rngs
@@ -240,7 +261,7 @@ class FrameRanges(object):
         Return set of expanded frames from all FrameRange objects.
         """
         return reduce(set.union, [set(rng) for rng in self._ranges], set())
-        
+
     def missing(self):
         frames = set(xrange(self.start, self.stop)) - self.frameset()
         return self.__class__(*tuple(self._compress(frames)))
@@ -249,37 +270,43 @@ class FrameRanges(object):
         if isinstance(obj, FrameRange):
             return set(obj)
         elif isinstance(obj, FrameRanges):
-            return reduce(set.union, [set(rng) for rng in obj.iterranges()], set())
-        raise TypeError("arguments must be FrameRange(s) objects: not %r" %obj)
+            return reduce(set.union,
+                          [set(rng) for rng in obj.iterranges()], set())
+        raise TypeError(
+                "arguments must be FrameRange(s) objects: not %r" % obj)
 
     def add(self, *args):
         if not args:
             return
         # Expand frames and form union
-        frames = reduce(set.union, [self._expandset(rng) for rng in args], self.frameset())
+        frames = reduce(set.union,
+                        [self._expandset(rng) for rng in args],
+                        self.frameset())
         self._ranges = self._compress(frames)
 
     def exclude(self, *args):
         if not args:
             return
         # Expand frames and subtract
-        frames = self.frameset() - reduce(set.union, [self._expandset(rng) for rng in args])
+        frames = self.frameset() - reduce(
+            set.union, [self._expandset(rng) for rng in args])
         self._ranges = self._compress(frames)
 
     # string reps
-    # ------------------------------
     def __repr__(self):
-        return "%s(%r)" %(self.__class__.__name__, str(self))
+        return "%s(%r)" % (self.__class__.__name__, str(self))
 
     def __str__(self):
-        return self.__class__.kRangeDelim.join([str(rng) for rng in self._ranges])
+        return self.__class__.kRangeDelim.join(
+                                        [str(rng) for rng in self._ranges])
 
     @property
     def fullstr(self):
-        return self.__class__.kRangeDelim.join([rng.fullstr for rng in self._ranges])
+        return self.__class__.kRangeDelim.join(
+                                    [rng.fullstr for rng in self._ranges])
 
     # comparisons
-    # ------------------------------  
+    # ------------------------------
     def __iter__(self):
         for rng in self._ranges:
             for fr in rng:
@@ -301,8 +328,9 @@ class FrameRanges(object):
             if len(self._ranges) != len(obj._ranges):
                 return False
             else:
-                for a,b in zip(self._ranges, obj._ranges):
-                    if a != b: return False
+                for a, b in zip(self._ranges, obj._ranges):
+                    if a != b:
+                        return False
                 else:
                     return True
         except AttributeError:
@@ -313,8 +341,9 @@ class FrameRanges(object):
             if len(self._ranges) != len(obj._ranges):
                 return True
             else:
-                for a,b in zip(self._ranges, obj._ranges):
-                    if a != b: return True
+                for a, b in zip(self._ranges, obj._ranges):
+                    if a != b:
+                        return True
                 else:
                     return False
         except AttributeError:
@@ -323,21 +352,25 @@ class FrameRanges(object):
     __hash__ = None
 
     def __lt__(self, obj):
-        return (self.start, self.stop, len(self)) < (obj.start, obj.stop, len(obj))
+        return (self.start,
+                self.stop, len(self)) < (obj.start, obj.stop, len(obj))
 
     def __gt__(self, obj):
-        return (self.start, self.stop, len(self)) > (obj.start, obj.stop, len(obj))
+        return (self.start,
+                self.stop, len(self)) > (obj.start, obj.stop, len(obj))
 
     def __le__(self, obj):
-        return (self.start, self.stop, len(self)) <= (obj.start, obj.stop, len(obj))
+        return (self.start,
+                self.stop, len(self)) <= (obj.start, obj.stop, len(obj))
 
     def __ge__(self, obj):
-        return (self.start, self.stop, len(self)) >= (obj.start, obj.stop, len(obj))
-        
+        return (self.start,
+                self.stop, len(self)) >= (obj.start, obj.stop, len(obj))
+
     # other props
     #
-    # @tuple, @ituple, & @xrange are all undefinied because a FrameRanges may have
-    # many ranges and steps.
+    # @tuple, @ituple, & @xrange are all undefinied because a FrameRanges may
+    # have many ranges and steps.
     # ------------------------------
     def copy(self):
         return self.__class__(*self._ranges)
@@ -354,29 +387,30 @@ class FrameRanges(object):
             return self._ranges[-1].stop
         return None
 
-    @property    
+    @property
     def step(self):
         if self.isempty:
             return None
         elif self.iscontiguous:
             return self._ranges[0].step
         else:
-            #steps = set([rng.step for rng in self._ranges])
-            #if len(steps) == 1:
+            # steps = set([rng.step for rng in self._ranges])
+            # if len(steps) == 1:
             #    return steps.pop()
-            raise FrameRangeError("step is undefined for non-contiguous %r" %self)
+            raise FrameRangeError(
+                            "step is undefined for non-contiguous %r" % self)
 
-    @property    
+    @property
     def issingleframe(self):
         """returns True if this frame range contains only one frame"""
         return len(self._ranges) == 1 and len(self._ranges[0]) == 1
 
-    @property    
+    @property
     def iscontiguous(self):
         """returns True if this is a contiguous frame range"""
         return len(self._ranges) <= 1
 
-    @property    
+    @property
     def isempty(self):
         """returns True if this frame range is empty"""
         return len(self._ranges) == 0
@@ -385,19 +419,24 @@ class FrameRanges(object):
         """range(self):
         Return all frames in order.
         """
-        return sorted(reduce(list.__add__, [rng.range() for rng in self._ranges], []))
+        return sorted(reduce(list.__add__, [
+                                rng.range() for rng in self._ranges], []))
 
     # create FrameRanges object from rv syntax filepath
     # ------------------------------
     rv_frame_syntax_pat = re.compile(
-        r"""(?:(?P<start>-?\d+)-(?P<stop>-?\d+)(?P<pad>#|@+)?)|(?:(?<=\D)(?P<single>-?\d+)?(?P<pad2>#|@+)(?=[.]))""")
+        r"""(?:(?P<start>-?\d+)-(?P<stop>-?\d+)(?P<pad>#|@+)?)|\
+(?:(?<=\D)(?P<single>-?\d+)?(?P<pad2>#|@+)(?=[.]))"""
+        )
 
     @classmethod
     def fromPath(kls, rvpath):
         """fromPath(kls, rvpath):
-        Return a FrameRanges for files on disk that match rvpath with '#' or '@' wildcards.
-        rvpath should be a pattern. A plain path without rv-style wildcards will raise an exception).
-        
+        Return a FrameRanges for files on disk that match rvpath with '#' or
+                '@' wildcards.
+        rvpath should be a pattern. A plain path without rv-style wildcards
+        will raise an exception).
+
         The following rvpath examples are supported:
           Frames 1 to 100 no padding:     path/image.1-100@.jpg
           Frames 1 to 100 padding 4:      path/image.1-100#.jpg
@@ -407,17 +446,17 @@ class FrameRanges(object):
           All Frames padding 4:           path/image.#.jpg
           All Frames padding 5:           path/image.@@@@@.jpg
         """
-        base,fname = os.path.split(rvpath)
+        base, fname = os.path.split(rvpath)
         fnd = kls.rv_frame_syntax_pat.search(fname)
         if fnd is None:
-            raise FrameRangeError("bad rv frame range string: %s" %fname)
+            raise FrameRangeError("bad rv frame range string: %s" % fname)
 
         dic = fnd.groupdict()
 
         txt = dic["pad"] or dic["pad2"]
         fpad = max(1, txt == '#' and 4 or len(txt or []))
 
-        x,y = fnd.span()
+        x, y = fnd.span()
         pre = fname[:x]
         post = fname[y:]
 
@@ -425,44 +464,51 @@ class FrameRanges(object):
         if not dic["single"]:
             # specified range between start & stop
             fmin = dic["start"]
-            if fmin is not None: fmin = int(fmin)
+            if fmin is not None:
+                fmin = int(fmin)
             fmax = dic["stop"]
-            if fmax is not None: fmax = int(fmax)
+            if fmax is not None:
+                fmax = int(fmax)
 
             # Scan directory for files that match pat
             # File names are concatted into one long string
-            pat = re.compile(r"""^%s(%s)%s$""" %(re.escape(pre), r"\d"*fpad, re.escape(post)), re.MULTILINE)
-            files = '\n'.join([p for p in os.listdir(base or ".") if os.path.isfile(os.path.join(base, p))])
-            logging.debug("matching %d files from: %s" %(len(files), base or os.getcwd()))
+            pat = re.compile(r"""^%s(%s)%s$""" % (
+                re.escape(pre), r"\d"*fpad, re.escape(post)), re.MULTILINE)
+            files = '\n'.join([
+                p for p in os.listdir(base or ".") if os.path.isfile(
+                                                    os.path.join(base, p))])
+            logging.debug("matching %d files from: %s" % (
+                                            len(files), base or os.getcwd()))
 
             frameset = set()
             for fnd in pat.finditer(files):
                 fr = int(fnd.group(1))
-                if fmin is not None and fr < fmin: continue
-                if fmax is not None and fr > fmax: continue
+                if fmin is not None and fr < fmin:
+                    continue
+                if fmax is not None and fr > fmax:
+                    continue
                 frameset.add(fr)
 
             frng._ranges = frng._compress(frameset)     # manually set frameset
         else:
             # specified single frame
             fr = int(dic["single"])
-            p = os.path.join(base, "".join([pre, "%0*d" %(fpad, fr), post]))
-            logging.debug("matching 1 file: %s" %p)
+            p = os.path.join(base, "".join([pre, "%0*d" % (fpad, fr), post]))
+            logging.debug("matching 1 file: %s" % p)
             if os.path.isfile(p):
                 frng = kls(FrameRange(fr))
         return frng
 
 
-### !!! Obsolete functions
+# ## !!! Obsolete functions
 # ------------------------------
-
-
 
 def valid_frame_ranges(frame_ranges):
     '''
     Validate a multiple frame range definitions.
     @param frame_ranges string of the comma separated frame ranges to validate
-    @return boolean to indicate validity, string of a valid frame range expression.
+    @return boolean to indicate validity, string of a valid frame range
+            expression.
     '''
 
     ranges = frame_ranges.split(',')
@@ -472,7 +518,8 @@ def valid_frame_ranges(frame_ranges):
             status = False
 
     str_ranges = ','.join(ranges)
-    return status,str_ranges
+    return status, str_ranges
+
 
 def valid_frame_range(frame_range):
     '''
@@ -485,8 +532,8 @@ def valid_frame_range(frame_range):
     status - boolean to indicate validity.
     '''
 
-    syntax = '^(\d+(-\d+(x\d+)*)*)+$'
-    regex  = re.compile(syntax)
+    syntax = r'^(\d+(-\d+(x\d+)*)*)+$'
+    regex = re.compile(syntax)
 
     if regex.match(frame_range):
         status = True
@@ -495,9 +542,11 @@ def valid_frame_range(frame_range):
 
     return status
 
+
 def flat_frame_range(frame_range):
     '''
-    Flat the frame ranges so we only see , separated string, ie 3, 5, 6-9 will be 3, 5, 6, 7, 8, 9
+    Flat the frame ranges so we only see , separated string, ie 3, 5, 6-9 will
+    be 3, 5, 6, 7, 8, 9
     Arguments:
     frame_range - string of the frame range to validate
 
@@ -526,11 +575,14 @@ def flat_frame_range(frame_range):
     else:
         return False, frame_range
 
+
 def is_static_frame_range(frame_ranges):
     '''
-    Determine if a frame_range string represents a static frame range (i.e. just 1 frame).
+    Determine if a frame_range string represents a static frame range
+            (i.e. just 1 frame).
     @param frame_ranges String of the comma separated frame ranges to check.
-    @return True if the frame_ranges string represents a static frame range.  Otherwise, return False.
+    @return True if the frame_ranges string represents a static frame range.
+        Otherwise, return False.
     '''
     status, frame_range_str = flat_frame_range(frame_ranges)
     if not status:
@@ -543,7 +595,8 @@ def is_static_frame_range(frame_ranges):
 
 def get_fps():
     """
-    @return The frame rate (frames per second) from the current host application.
+    @return The frame rate (frames per second)
+    from the current host application.
     """
     try:
         import maya.cmds as cmds
@@ -552,7 +605,7 @@ def get_fps():
 
     fps = 24.0
     if cmds:
-        currentFps = cmds.currentUnit( query=True, time=True )
+        currentFps = cmds.currentUnit(query=True, time=True)
         if currentFps == 'film':
             fps = 24.0
         elif currentFps == 'pal':
@@ -575,6 +628,4 @@ def get_fps():
 
     if hou:
         fps = hou.fps()
-
     return fps
-

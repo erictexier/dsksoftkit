@@ -12,19 +12,19 @@ class GitUtils(object):
     """
     __markertag = re.compile(r'\(.*\)')
 
-    def __init__(self,repo_location=""):
+    def __init__(self, repo_location=""):
         super(GitUtils, self).__init__()
         self._repolocation = repo_location
 
     def is_valid(self):
         if self._repolocation == "":
             return False
-        return os.path.isdir(os.path.join(self._repolocation,".git"))
+        return os.path.isdir(os.path.join(self._repolocation, ".git"))
 
     @staticmethod
     def _get_datetime(astr):
         import datetime
-        return datetime.datetime.strptime(astr,'%Y-%m-%d %H:%M:%S')
+        return datetime.datetime.strptime(astr, '%Y-%m-%d %H:%M:%S')
 
     @staticmethod
     def _callsubprocess(cmd, git_location):
@@ -70,7 +70,7 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git', 'describe','--abbrev=0','--tags'])
+        cmd.extend(['git', 'describe', '--abbrev=0', '--tags'])
         p = self._callsubprocess(cmd, self._repolocation)
         result = self._getresult(p, cmd)
         res = result[0].rstrip()
@@ -95,7 +95,7 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git', 'push','origin',tag])
+        cmd.extend(['git', 'push', 'origin', tag])
         p = self._callsubprocess(cmd, self._repolocation)
         return self._getresult(p, cmd)
 
@@ -105,7 +105,7 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git','remote','-v'])
+        cmd.extend(['git', 'remote', '-v'])
         p = self._callsubprocess(cmd, self._repolocation)
         result = self._getresult(p, cmd)
         result = self._clean_tab(result)
@@ -113,7 +113,7 @@ class GitUtils(object):
         result = result[1].split("/")
         for i in result:
             if '.git' in i:
-                return i.replace(".git","")
+                return i.replace(".git", "")
         return "no-git-name-founded"
 
     def get_git_date(self, max_log):
@@ -124,7 +124,11 @@ class GitUtils(object):
         if not self.is_valid():
             return list()
         cmd = list()
-        cmd.extend(['git','log',"-%d" % max_log ,'--format=%ci','--date=local'])
+        cmd.extend(['git',
+                    'log',
+                    '-%d' % max_log,
+                    '--format=%ci',
+                    '--date=local'])
         p = self._callsubprocess(cmd, self._repolocation)
         return self._getresult(p, cmd)
 
@@ -138,7 +142,7 @@ class GitUtils(object):
         cmd = list()
         cmd.extend(['git',
                     'log',
-                    '-%d' % max_log,'--pretty=format:"%h %ci %an %d"'])
+                    '-%d' % max_log, '--pretty=format:"%h %ci %an %d"'])
         p = self._callsubprocess(cmd, self._repolocation)
         return self._getresult(p, cmd)
 
@@ -163,7 +167,7 @@ class GitUtils(object):
             m = self.__markertag.search(r)
             if m:
                 ttag = m.group()[1:-1].split()
-                ttag = [x.replace(",","") for x in ttag]
+                ttag = [x.replace(",", "") for x in ttag]
                 if len(ttag) == 2:
                     ttag = ttag[1]
                     rs = r.split()
@@ -173,7 +177,7 @@ class GitUtils(object):
                     final.append([ttag, objdt, rs[0][1:], False])
                 elif len(ttag) > 3:
                     is_head = False
-                    for i,x in enumerate(ttag):
+                    for i, x in enumerate(ttag):
                         if x == 'HEAD':
                             is_head = True
                         if x == 'tag:':
@@ -185,7 +189,6 @@ class GitUtils(object):
                             break
 
         return final
-
 
     def install_repo_from_bash(self, src_repo, release_place, rootname, tag):
         """Run a git bash script
@@ -221,7 +224,6 @@ class GitUtils(object):
         """
         return os.path.join(self._repolocation, relative_destination)
 
-
     def clone_repo(self, repo_name, dest, branch=""):
         """This function is not checking the validity of self
 
@@ -230,7 +232,6 @@ class GitUtils(object):
             :param dest: where to clone the repo
             :param branch: optional branch name
             :return: return log of the git call
-
         """
 
         cmd = ['git']
@@ -281,4 +282,3 @@ class GitUtils(object):
         p = self._callsubprocess(cmd, self._repolocation)
         result = self._getresult(p, cmd)
         return result
-

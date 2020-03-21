@@ -2,13 +2,14 @@ import os
 import sys
 import platform
 import re
+from os.path import expanduser
 from datetime import datetime
+from collections import namedtuple
+
 from dsk.base.lib.log_manager import LogManager
 from dsk.base.utils.filesystem_utils import FileSystemUtils
-
 from dsk.base.resources.dsk_errors import DskError, DirmapError
 from dsk.base.resources.dsk_errors import DskErrorPython2or3Only
-
 from dsk.base.path_helper import template
 from dsk.base.resources.dsk_constants import ROOT_CONFIG_DIR
 from dsk.base.resources.dsk_constants import NAME_CONFIG_DIR
@@ -24,7 +25,6 @@ DEFAULT_DIRMAP_FILE = os.path.join(os.sep,
                                    ENVI_TEMPLATE_NAME,
                                    ENVI_DIRMAP_NAME)
 
-
 # python3 support
 if sys.version_info[0] == 2:
     from urlparse import urlparse
@@ -34,31 +34,30 @@ elif sys.version_info[0] == 3:
 else:
     raise DskErrorPython2or3Only("Need Python 2 or 3")
 
-from collections import namedtuple
-
 
 class LocationDefault(namedtuple(
-            'locationDefault', 
+            'locationDefault',
             "cache_dir_def, log_file_def, pref_dir_def, data_dir_def,"
             "platform, namespace, is_user")):
     __slots__ = ()
 
 
-class LocationWithUrl(namedtuple('location_with_Url', 
+class LocationWithUrl(namedtuple('location_with_Url',
                                  "locationdefault, authenfile, baseUrl")):
     __slots__ = ()
 
 
 log = LogManager.get_logger(__name__)
-from os.path import expanduser
 
 
 def get_home_user():
     ex = expanduser("~")
     return ex
 
+
 def uname():
     return platform.uname()
+
 
 def getOs():
 
@@ -68,6 +67,7 @@ def getOs():
             return 'Windows'
     # Linux Mac default
     return pos
+
 
 class LocalFileStorageManager(object):
     """
@@ -80,12 +80,14 @@ class LocalFileStorageManager(object):
     such paths and also handles compatibility across generations of path
     standards if and when these change between releases.
 
-    .. note:: All paths returned by this class are local to the currently running
-              user and typically private or with limited access settings for other users.
+    .. note:: All paths returned by this class are local to the currently
+              running user and typically private or with limited access
+              settings for other users.
 
-              If the current user's home directory is not an appropriate location to store
-              your user files, you can use the ``DSK_HOME`` environment variable to
-              override the root location of the files. In that case, the location for the
+              If the current user's home directory is not an appropriate
+              location to store your user files, you can use the
+              ``DSK_HOME`` environment variable to override the root
+              location of the files. In that case, the location for the
               user files on each platform will be:
 
               - Logging:     ``$DSK_HOME/logs``
@@ -99,7 +101,7 @@ class LocalFileStorageManager(object):
     :constant CACHE:       Indicates a path suitable for storing cache data
                             that can be deleted without any loss of
                             functionality or state.
-    :constant PERSISTENT:  Indicates a path suitable for storing data that 
+    :constant PERSISTENT:  Indicates a path suitable for storing data that
                             needs to be retained between sessions.
     :constant PREFERENCES: Indicates a path that suitable for storing settings
                             files and preferences.
@@ -113,11 +115,11 @@ class LocalFileStorageManager(object):
     @classmethod
     def base_application_location(cls,
                                   namespace,
-                                  logfile = "",
+                                  logfile="",
                                   alternative=None,
                                   is_user=True):
         """
-        Returns the platform specific location for 
+        Returns the platform specific location for
                 CacheDir/Logging Name/Preferences/Persistent
         name tag
         :returns: LocationDefault
@@ -127,22 +129,22 @@ class LocalFileStorageManager(object):
 
         alt_name = ""
         if alternative and alternative in os.environ:
-            alt_name = os.path.expandvars(os.environ.get(alternative,""))
+            alt_name = os.path.expandvars(os.environ.get(alternative, ""))
             if alt_name in None:
                 alt_name = ""
             alt_name = alt_name.strip()
         if logfile == '':
             logfile = datetime.now().strftime("%Y%m%d-%H%M%S")
         logext = '.log'
-        logfilename = logfile.replace(logext,'')
+        logfilename = logfile.replace(logext, '')
         logfilename = logfilename+logext
-        platform = sys.platform 
+        platform = sys.platform
         if is_user or alt_name == '':
             alt_name = os.path.expanduser("~")
             if platform == "darwin":
                 cache_dir_def = os.path.join(alt_name,
                                              "Library",
-                                            "Caches", namespace)
+                                             "Caches", namespace)
                 log_file_def = os.path.join(alt_name,
                                             "Library",
                                             "Logs", namespace, logfilename)
@@ -157,13 +159,13 @@ class LocalFileStorageManager(object):
                 app_data = os.environ.get("APPDATA", "APPDATA_NOT_SET")
                 cache_dir_def = os.path.join(app_data, namespace)
                 log_file_def = os.path.join(app_data,
-                                            namespace, 
+                                            namespace,
                                             "Logs", logfilename)
                 pref_dir_def = os.path.join(app_data, namespace, "Preferences")
                 data_dir_def = os.path.join(app_data, namespace, "Data")
 
             elif platform == 'linux':
-                cache_dir_def = os.path.join(alt_name, ".%s" %  namespace)
+                cache_dir_def = os.path.join(alt_name, ".%s" % namespace)
                 log_file_def = os.path.join(alt_name, ".%s" % namespace,
                                             "logs", logfilename)
                 pref_dir_def = os.path.join(alt_name, ".%s" % namespace,
@@ -180,8 +182,8 @@ class LocalFileStorageManager(object):
             pref_dir_def = os.path.join(alt_name, "preferences")
             data_dir_def = os.path.join(alt_name, "data")
         else:
-            raise ValueError("you should set is_user to true or a" \
-                "alternative variable name with path content")
+            raise ValueError("you should set is_user to true or a"
+                             "alternative variable name with path content")
 
         return LocationDefault(cache_dir_def,
                                log_file_def,
@@ -191,13 +193,13 @@ class LocalFileStorageManager(object):
                                namespace,
                                is_user)
 
-
     @classmethod
     def ensure_exist(cls, location_def, which):
         assert isinstance(location_def, LocationDefault)
         try:
             if which == cls.CACHE:
-                FileSystemUtils.ensure_folder_exists(location_def.cache_dir_def)
+                FileSystemUtils.ensure_folder_exists(
+                    location_def.cache_dir_def)
                 return True
             elif which == cls.PREFERENCES:
                 FileSystemUtils.ensure_folder_exists(location_def.pref_dir_def)
@@ -213,7 +215,6 @@ class LocalFileStorageManager(object):
     @classmethod
     def get_global_root(cls, path_type, generation):
         raise("not valid function get_global_root")
-
 
     @classmethod
     def get_site_root_name(cls, hostname):
@@ -252,15 +253,17 @@ class LocalFileStorageManager(object):
         return LocationWithUrl(location,
                                os.path.join(location.cache_dir_def),
                                base_url)
+
     @classmethod
     def get_preferences_site_root(cls, location, base_url):
         return os.path.join(location.preference_dir_def, base_url)
+
 
 class TextEditorPlatform(object):
     editors = []
     diffscmd = []
 
-    env_editor = os.environ.get('EDITOR','')
+    env_editor = os.environ.get('EDITOR', '')
 
     # get the setting
     system = sys.platform
@@ -277,13 +280,13 @@ class TextEditorPlatform(object):
             editors = ["open"]
         else:
             editors = [env_editor]
-        diffscmd = ['opendiff','meld']
+        diffscmd = ['opendiff', 'meld']
     elif system == "win32":
         if env_editor == '':
             editors = ["cmd.exe", "/C", "start"]
         else:
             editors = [env_editor]
-        diffscmd = ['opendiff','meld']
+        diffscmd = ['opendiff', 'meld']
 
 
 def _read_dirmap():
@@ -305,10 +308,12 @@ def _read_dirmap():
     dirmaps = dirmaps_data["dirmaps"]
     return dirmaps
 
+
 def get_dirmaps():
     """
     """
     return _read_dirmap()
+
 
 def get_link_remap(path):
     """
@@ -335,6 +340,7 @@ def get_link_remap(path):
 
     return path
 
+
 def dirmap(path, os_name=None):
     """
     Find the mapping for a path. This will run through all directory mappings
@@ -347,7 +353,7 @@ def dirmap(path, os_name=None):
     curr_platform = platform.system().lower()
 
     isexists = os.path.exists(path)
-    if (os_name is None or os_name == curr_platform ) and isexists:
+    if (os_name is None or os_name == curr_platform) and isexists:
         return path
 
     if os_name is None:
@@ -362,7 +368,7 @@ def dirmap(path, os_name=None):
                 return path.replace(dirmap[dirmap_platform], repl)
 
     raise DirmapError("Unable to find dirmap for %spath: '%s'" % (
-                                    ("non-existant ","")[isexists], path))
+                                    ("non-existant ", "")[isexists], path))
 
 
 def conform_slashes(path):
@@ -371,6 +377,7 @@ def conform_slashes(path):
     conformed_path = re.sub(r"[\\|/]+", "/", os.path.normpath(path))
     return conformed_path
 
+
 def conform_path(path, os_name=None):
     """
     Replace all occurrences of backslashes with a forward slash.
@@ -378,7 +385,7 @@ def conform_path(path, os_name=None):
     @param path The path to conform
     """
 
-    #legacy support of os.name being used instead of platform
+    # legacy support of os.name being used instead of platform
     if os_name == "nt":
         os_name = "windows"
 

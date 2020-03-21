@@ -1,4 +1,4 @@
-############ INFO DEVELOPMENT ######
+# ########### INFO DEVELOPMENT ######
 ANAPP_YEAR = "2016-2???"
 COMPAGNY = "Eclectic Studio Net"
 COPYRIGHT = "Copyright (c) %s" % ANAPP_YEAR
@@ -17,19 +17,18 @@ CODE_INSTALL = dsk.base.CodeInstall
 if CODE_INSTALL.find('eric') != -1:
     AUTOR = "eric"
 
-######################### LOG
+# ######################## LOG
 DO_LOG = True
 
-######################### SPLASH
+# ######################## SPLASH
 DO_SPLASH = False
 
-########################## Source code level
+# ######################### Source code level
 RESOURCES = "resources"
 RESOURCES_UI = "ui"
 RESOURCES_ICONS = "icons"
 RESOURCEDATA_PATH = os.path.join(CODE_INSTALL, RESOURCES)
 ICON_PATH = os.path.join(CODE_INSTALL, RESOURCES, RESOURCES_ICONS)
-
 
 # where the ui file are
 UIC_PATH = os.path.join(CODE_INSTALL, RESOURCES, RESOURCES_UI)
@@ -38,16 +37,14 @@ DEFAULT_LAYOUT_ROOT = "defaultLayout"
 DEFAULT_LAYOUT_FILE = os.path.join(RESOURCEDATA_PATH,
                                    DEFAULT_LAYOUT_ROOT+".lyt")
 
+# ######################## Email
 
-######################### Email
-
-SERVER_EMAIL_NAME = 'smtpin1.com'
+SERVER_EMAIL_NAME = 'smtp.mail.yahoo.com'
 EMAIL_SUFFIX = "@%s" % "eclecticstudionet.com"
 if AUTOR == 'eric':
     EMAIL_BUG = "erictexier@eclecticstudionet.com"
 else:
     EMAIL_BUG = "%s%s" % (AUTOR,EMAIL_SUFFIX)
-
 
 ########################## Bug Report ( file to save stuff....)
 home = get_home_user() #expanduser("~")
@@ -59,8 +56,7 @@ if not os.path.isdir(autordir):
 BUG_REPORT = os.path.join(autordir,"bug%s.txt" % APPNAME)
 assert os.path.isdir(autordir)
 
-########################## WEB PAGE HELP
-
+# ######################### WEB PAGE HELP
 QUICKSTART = dsk.base.__doc__
 
 
@@ -68,7 +64,7 @@ QUICKSTART = dsk.base.__doc__
 #topDoc = os.path.join(os.path.split(CODE_INSTALL)[:-1])
 URLDOC = "file://%s/doc/src/_build/html/index.html" % dsk.base.Base
 
-########################## USER LOCAL AREA
+# ######################### USER LOCAL AREA
 DB_NAME = "." + APPNAME
 HOME_PREF = home
 # Define some user dir to save preference and log
@@ -79,12 +75,11 @@ PREF_LAYOUTDIR = DATABASE_PATH
 ## a place to save the log
 LOG_PATH = os.path.join(DATABASE_PATH,'logs')
 
-
-########################## NAME TOOLS ACCESS
+# ######################### NAME TOOLS ACCESS
 TOOLS_LIST = ["logWidget"]
 MAXCUR = 4000
 
-######################### PATH NAME CONVENTION
+# ######################## PATH NAME CONVENTION
 PREF_FILE = "preferences.xml"
 PREF_FILE_APP = "%spreference.xml"
 RECENT_FILE_SAVE = "recentFileSave.txt"

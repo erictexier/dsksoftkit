@@ -24,9 +24,8 @@ PRIMARY_STORAGE_NAME = "primary"
 # hook that is executed before a publish is registered in sg.
 PUBLISH_HOOK_NAME = "before_register_publish"
 
-
 # valid characters for a template key name
-TEMPLATE_KEY_NAME_REGEX = "[a-zA-Z_ 0-9\.]+"
+TEMPLATE_KEY_NAME_REGEX = r"[a-zA-Z_ 0-9\.]+"
 
 # a human readable explanation of the above. For error messages.
 VALID_TEMPLATE_KEY_NAME_DESC = "letters, numbers, underscore, space and period"

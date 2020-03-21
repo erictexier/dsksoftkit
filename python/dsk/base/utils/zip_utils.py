@@ -33,10 +33,11 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
 
     :param src_zip_file: Path to zip file to uncompress
     :param target_folder: Folder to extract into
-    :param auto_detect_bundle: Hints that the attachment contains toolkit bundle
-     (config, app, engine, framework) and that this should be attempted to be
-     detected and unpacked intelligently. For example, if the zip file contains
-     the bundle in a subfolder, this should be correctly unfolded.
+    :param auto_detect_bundle: Hints that the attachment contains toolkit
+      bundle (config, app, engine, framework) and that this should be
+      attempted to be detected and unpacked intelligently.
+      For example, if the zip file contains the bundle in a subfolder,
+      this should be correctly unfolded.
     """
     log.debug("Unpacking %s into %s" % (src_zip_file, target_folder))
     zip_obj = zipfile.ZipFile(src_zip_file, "r")
@@ -44,17 +45,21 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
     extraction_done = False
 
     if auto_detect_bundle:
-        # enable additional flexibility in order to auto detect a bundle structure
-        # within the zip. Support the following alternative formats:
-        # - files are extracted according to the structure in the zip (default case)
+        # enable additional flexibility in order to auto detect a bundle
+        # structure within the zip. Support the following alternative formats:
+        # - files are extracted according to the structure
+        #   in the zip (default case)
         # - if the zip contains a single folder with all content inside,
         #   assume the bundle is contained inside this structure. This is
-        #   a common scenario if a user has created a zip by right clicking on it
+        #   a common scenario if a user has created a zip by
+        #    right clicking on it
         #   and selected 'create archive' or 'send to zip'.
 
         # compute number of unique root folders
         # note: zip module uses forward slash on all operating systems
-        root_items = set([item.split("/")[0] for item in zip_obj.namelist() if "/" in item])
+        root_items = set(
+            [item.split("/")[0] for item in zip_obj.namelist() if "/" in item]
+            )
         # remove certain system items
         root_items -= SYSTEM_FILE_ITEMS
 
@@ -62,7 +67,8 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
             root_to_omit = root_items.pop()
 
             log.debug(
-                "Zip file contains a single folder '%s' and auto_detect_bundle flag is set. "
+                "Zip file contains a single folder '%s' "
+                "and auto_detect_bundle flag is set. "
                 "Will extract content out of the folder." % root_to_omit
             )
 
@@ -81,6 +87,7 @@ def unzip_file(src_zip_file, target_folder, auto_detect_bundle=False):
             # process them one by one
             _process_item(zip_obj, x, target_folder)
 
+
 @filesystem_utils.with_cleared_umask
 def zip_file(source_folder, target_zip_file):
     """
@@ -89,7 +96,8 @@ def zip_file(source_folder, target_zip_file):
     :param source_folder: Folder to process
     :param target_zip_file: Path to zip file to create
     """
-    log.debug("Zipping contents of %s to %s" % (source_folder, target_zip_file))
+    log.debug("Zipping contents of %s to %s" % (
+                                source_folder, target_zip_file))
     zf = zipfile.ZipFile(target_zip_file, "w", zipfile.ZIP_DEFLATED)
     for root, ignored, files, in os.walk(source_folder):
         for fname in files:
@@ -116,13 +124,14 @@ def _process_item(zip_obj, item_path, target_path, root_to_omit=None):
     # build the destination pathname, replacing
     # forward slashes to platform specific separators.
     # Strip trailing path separator, unless it represents the root.
-    if (target_path[-1:] in (os.path.sep, os.path.altsep)
-        and len(os.path.splitdrive(target_path)[1]) > 1):
+    if (target_path[-1:] in (os.path.sep, os.path.altsep) and
+            len(os.path.splitdrive(target_path)[1]) > 1):
         target_path = target_path[:-1]
 
     # see if we need to omit a root_folder
     # e.g.
-    # target_path = '/tmp', item_path = 'test/foo/bar.png', root_to_omit='test'
+    # target_path = '/tmp', item_path = 'test/foo/bar.png',
+    # root_to_omit='test'
     # ==>
     # /tmp/foo/bar.png
     #
@@ -157,14 +166,8 @@ def _process_item(zip_obj, item_path, target_path, root_to_omit=None):
         target_obj.close()
         # Restore permissions on the extracted file
         # Took bits and bobs from here :
-        # http://bugs.python.org/file34893/issue15795_test_and_doc_fixes.patch
         zip_info = zip_obj.getinfo(item_path)
-        # Only preserve execution bits: --x--x--x
-        # That is binary 001001001 = 0x49
-        # External attr seems to be 4 bytes long
-        # permissions being stored in 2 top most bytes, hence the 16 shift
-        # See : http://unix.stackexchange.com/questions/14705/the-zip-formats-external-file-attribute
-        # If one execution bit is set, give execution rights to everyone
+
         mode = zip_info.external_attr >> 16 & 0x49
         if mode:
             os.chmod(target_path, 0o777)

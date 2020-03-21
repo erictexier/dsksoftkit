@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import logging
 
 from dsk.base.utils.disk_utils import DiskUtils
@@ -11,57 +12,56 @@ class NullHandler(logging.Handler):
         pass
 
 
-class TESTlogstream(object): 
+class TESTlogstream(object):
     def __init__(self, filepath, aneditor, mode='w+'):
         self._file = open(filepath, mode=mode)
 
-        if aneditor != None:
+        if aneditor:
             assert hasattr(aneditor, "logwrite")
             assert callable(aneditor.logwrite)
-        self._aneditor =  aneditor
+        self._aneditor = aneditor
 
     def write(self, line):
 
-        if(self._aneditor != None):
-            #This is an broadcast to the someone that be need it
+        if self._aneditor:
+            # This is an broadcast to the someone that be need it
             self._aneditor.logwrite(str(line))
         self._file.write(line)
 
     def close(self):
-        if self._file != None:
+        if self._file:
             self._file.close()
         self._file = None
+
     def flush(self):
-        if self._file != None:
+        if self._file:
             self._file.flush()
 
     def readlines(self):
-        if self._file != None:
+        if self._file:
             return self._file.readlines()
         return list()
 
-################################################
-class LogUtils(object):
-    _defaultFormat = "[%(levelname)-7s] - %(asctime)s - %(name)s  - %(message)s"
-    #_saveFormat = "[%(levelname)s %(name)s] %(message)s"
 
+# ###############################################
+class LogUtils(object):
+    _defaultFormat = "[%(levelname)-7s] - %(asctime)s - %(name)s - %(message)s"
+    # _saveFormat = "[%(levelname)s %(name)s] %(message)s"
     # keep the last tag ti restore from before mute
     # see startMute
-    _saveLoggerTag =  "" 
+    _saveLoggerTag = ""
 
     def __init__(self):
         self._lock = False
         self._logger = None
-
 
         # keep the current hander
         self._handlerObject = None
         self._handlerObjecthand = None
         self._handlerObjectList = []
 
-        # default logging mode        
+        # default logging mode
         self._loglevel = logging.DEBUG
- 
         self._logFormat = None
 
     ##########################
@@ -73,16 +73,16 @@ class LogUtils(object):
         """
         Set log level on the current log
         """
-        if self._handlerObjecthand != None:
+        if self._handlerObjecthand:
             self._handlerObjecthand.setLevel(level)
-        elif self._logger != None:
+        elif self._logger:
             self._logger.setLevel(level)
 
         self._loglevel = level
 
     ##########################
-    def setDebugMode(self,b):
-        if b == True:
+    def setDebugMode(self, b):
+        if b is True:
             self.setLogLevel(logging.DEBUG)
         else:
             self.setLogLevel(logging.INFO)
@@ -96,19 +96,19 @@ class LogUtils(object):
         self.setDebugMode(not self.isDebugOn())
 
     ##########################
-    def setFormat(self, formate = ""):
-        if self._logFormat == None:
+    def setFormat(self, formate=""):
+        if self._logFormat is None:
             if formate == "":
                 formate = LogUtils._defaultFormat
             self._logFormat = logging.Formatter(formate)
 
-        if self._handlerObjecthand != None:
+        if self._handlerObjecthand:
             self._handlerObjecthand.setFormatter(self._logFormat)
 
     ##########################
     def pushHandlerStack(self):
-        if self._handlerObjecthand != None:
-            if not self._handlerObjecthand in self._handlerObjectList:
+        if self._handlerObjecthand:
+            if self._handlerObjecthand not in self._handlerObjectList:
                 self._handlerObjectList.append(self._handlerObjecthand)
 
     ##########################
@@ -119,7 +119,7 @@ class LogUtils(object):
 
             hand.flush()
             hand.close()
-            self._logger.removeHandler(hand) # get the last one
+            self._logger.removeHandler(hand)  # get the last one
 
             if len(self._handlerObjectList) > 0:
                     if len(self._handlerObjectList) > 0:
@@ -128,38 +128,39 @@ class LogUtils(object):
                         self._handlerObjecthand = None
 
     ##########################
-    def addHandlerStream(self,ooo = None):
+    def addHandlerStream(self, ooo=None):
         self.pushHandlerStack()
         self._handlerObjecthand = logging.StreamHandler(ooo)
         self._logger.addHandler(self._handlerObjecthand)
 
-    def addHandlerFile(self,fileName):
+    def addHandlerFile(self, fileName):
         self.pushHandlerStack()
         self._handlerObjecthand = logging.FileHandler(fileName)
         self._logger.addHandler(self._handlerObjecthand)
         self._logFileName = fileName
 
-    def addHandlerFileRotate(self,fileName,astream = None,nbLog=6):
-        afile = self.pushLogs(fileName,nbLog)
-        if(astream == None):
+    def addHandlerFileRotate(self, fileName, astream=None, nbLog=6):
+        afile = self.pushLogs(fileName, nbLog)
+        if(astream is None):
             self.addHandlerFile(afile)
         else:
-            self._handlerObject  = TESTlogstream(afile,astream)
+            self._handlerObject = TESTlogstream(afile, astream)
             self.addHandlerStream(self._handlerObject)
 
-    def regularHandlerFile(self,fileName,astream = None):
-        ### in python2.7
-        #self._handlerObjecthand = logging.handlers.RotatingFileHandler(fileName)
+    def regularHandlerFile(self, fileName, astream=None):
+        # ## in python2.7
+        # self._handlerObjecthand =
+        #                    logging.handlers.RotatingFileHandler(fileName)
         # for now:
-        if(astream == None):
+        if(astream is None):
             self.addHandlerFile(fileName)
         else:
-            self._handlerObject  = TESTlogstream(fileName,astream)
+            self._handlerObject = TESTlogstream(fileName, astream)
             self.addHandlerStream(self._handlerObject)
 
     ##########################
     def getLogFilename(self):
-        return self._logFileName 
+        return self._logFileName
 
     def addHandlerMute(self):
         self.pushHandlerStack()
@@ -167,10 +168,10 @@ class LogUtils(object):
         self._logger.addHandler(self._handlerObjecthand)
 
     def clean(self):
-        if self._handlerObject != None:
+        if self._handlerObject:
             self._handlerObject.flush()
             self._handlerObject.close()
-        if self._logger != None:
+        if self._logger:
 
             for h in self._handlerObjectList:
                 self._logger.removeHandler(h)
@@ -185,15 +186,13 @@ class LogUtils(object):
         MsgUtils.set_logger("")
         self.clean()
 
-    def _startLog(self,logTag):
-
+    def _startLog(self, logTag):
         self._logger = logging.getLogger(logTag)
         self.setFormat()
         self.setLogLevel(self._loglevel)
         MsgUtils.set_logger(logTag)
 
-    def startLogConsole(self,logTag):
-
+    def startLogConsole(self, logTag):
         """ this is a basic log not using logging to redirect
             the output to a file
         """
@@ -202,24 +201,24 @@ class LogUtils(object):
         self.addHandlerStream()
         self.setFormat()
 
-    def startLogFile(self,logTag,logFile,astream=None):
-        #########
+    def startLogFile(self, logTag, logFile, astream=None):
+        # ########
         self.clean()
         self._startLog(logTag)
-        self.regularHandlerFile(logFile,astream)
+        self.regularHandlerFile(logFile, astream)
         self.setFormat()
-        ## Start New
+        # # Start New
 
-    def startLogFileRotate(self,logTag,logFile,nbRotation,astream = None):
+    def startLogFileRotate(self, logTag, logFile, nbRotation, astream=None):
         self.clean()
         self._startLog(logTag)
-        self.addHandlerFileRotate(logFile,astream,nbRotation)
+        self.addHandlerFileRotate(logFile, astream, nbRotation)
         self.setFormat()
 
-    def startMute(self,logTag):
-        #########
-        if self._logger != None:
-            self._saveLoggerTag = self._logger.name 
+    def startMute(self, logTag):
+        # ########
+        if self._logger:
+            self._saveLoggerTag = self._logger.name
         self.clean()
         self._startLog(logTag)
         self.addHandlerMute()
@@ -230,16 +229,16 @@ class LogUtils(object):
             MsgUtils.set_logger(self._saveLoggerTag)
             self._saveLoggerTag = ""
 
-    def startLogBatch(self,logTag,logFileName):
-        self.startLogFile(logTag,logFileName)
+    def startLogBatch(self, logTag, logFileName):
+        self.startLogFile(logTag, logFileName)
 
-    def info(self,someText):
+    def info(self, someText):
         # use the MsgUtils module instead
         self._logger.info(someText)
 
     @staticmethod
-    def pushLogs(filename,maxLogFile):
-        adir,basefile = os.path.split(filename)
+    def pushLogs(filename, maxLogFile):
+        adir, basefile = os.path.split(filename)
         if not DiskUtils.is_dir_exist(adir):
             if not DiskUtils.create_path(adir):
                 MsgUtils.error("Cannot create dir %r" % adir)
@@ -248,9 +247,9 @@ class LogUtils(object):
         if not os.path.exists(filename):
             return filename
 
-        for i in range(maxLogFile,0,-1):
-            tofile = os.path.join(adir,"%s.%d" % (basefile, i+1))
-            fromfile = os.path.join(adir,"%s.%d" % (basefile, i))
+        for i in range(maxLogFile, 0, -1):
+            tofile = os.path.join(adir, "%s.%d" % (basefile, i + 1))
+            fromfile = os.path.join(adir, "%s.%d" % (basefile, i))
             if os.path.exists(tofile) and os.path.exists(fromfile):
                 DiskUtils.remove_file(tofile)
             if os.path.exists(fromfile):
@@ -258,11 +257,11 @@ class LogUtils(object):
 
         DiskUtils.rename_file(
                             os.path.join(adir, basefile),
-                            os.path.join(adir,'%s.1' % basefile))
+                            os.path.join(adir, '%s.1' % basefile))
         return os.path.join(adir, basefile)
 
     ##########################
-    def lockLog(self,lfile):
+    def lockLog(self, lfile):
         # mainly to catch up with print statement
         from dsk.base.utils import platform_utils
         self._lock = True
@@ -271,24 +270,23 @@ class LogUtils(object):
 
         # lock the lockFile
         whichOs = platform_utils.platform.system()
-        if( whichOs == 'Linux' or 
-            whichOs == 'Darwin' or 
-            whichOs == 'Unix'):
-                import fcntl
-                # replace the input
-                os.close(0)
-                os.open("/dev/null", os.O_RDONLY)
+        if (whichOs == 'Linux' or
+                whichOs == 'Darwin' or
+                whichOs == 'Unix'):
+            import fcntl
+            # replace the input
+            os.close(0)
+            os.open("/dev/null", os.O_RDONLY)
 
-                # replace the output
-                os.close(1)
-                os.open(lfile,flags)
+            # replace the output
+            os.close(1)
+            os.open(lfile, flags)
 
+            fcntl.flock(1, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
-                fcntl.flock(1, fcntl.LOCK_EX|fcntl.LOCK_NB)
-
-                # redirect the std error
-                os.close(2)
-                os.open(lfile, flags)
+            # redirect the std error
+            os.close(2)
+            os.open(lfile, flags)
 
         elif whichOs == 'Windows':
             # need some work
@@ -316,7 +314,7 @@ def printSample(label):
     print("regular print %s" % label)        # regular print
     log.write("%s" % label * 12, 'debug')    # older syntax
 
-###############################################
+# ##############################################
 if __name__ == '__main__':
     # from os.path import expanduser
     from dsk.base.utils.platform_utils import get_home_user
@@ -325,7 +323,7 @@ if __name__ == '__main__':
 
     # logFile = "%s/TEMPLOG/test_logs" % expanduser("~")
     logFile = "%s/TEMPLOG/test_logs" % get_home_user()
-    print("LOG FILE",logFile)
+    print("LOG FILE", logFile)
     alog = LogUtils()
 
     printSample("NOT STARTED ")
@@ -336,10 +334,11 @@ if __name__ == '__main__':
     # alog.startLogFile("Console",logFile)
     # alog.addHandlerStream() # if run will keep print during logging to file
 
-    alog.startLogFileRotate("ROTATE",logFile,3)
+    alog.startLogFileRotate("ROTATE", logFile, 3)
     printSample("STARTED")
 
-    alog.addHandlerStream() # if run will keep print during the logging to file
+    # if run will keep print during the logging to file
+    alog.addHandlerStream()
     # for i in range(2):printSample("STARTED AFTER STREAM")
     alog.removeLastHandler()
     for i in range(5):
@@ -351,4 +350,3 @@ if __name__ == '__main__':
     # end the logging
     alog.end_log()
     printSample("ENDED")
-

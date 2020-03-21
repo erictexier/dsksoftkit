@@ -18,7 +18,6 @@ def signalInfo(name,arg,sign=None):
     else:
         return signalInfoT(name,arg,sign)
 
-  
 
 class SignalClass(QtT.QtCore.QObject):
     """ Wrap tupple into a subclass of QObject

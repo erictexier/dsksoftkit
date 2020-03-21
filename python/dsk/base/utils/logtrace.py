@@ -4,7 +4,7 @@
 
 #   Copyright (c) 2003-2006 Open Source Applications Foundation
 #
-#   Licensed under the Apache License, Version 2.0 (the "License");
+#   Licensed under the Apache License, Version 2.0 (the "License")
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
 #
@@ -16,7 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import re, sys, types
+import re
+import sys
+import types
 import logging
 import types
 import pdb
@@ -86,7 +88,7 @@ indent_amount = 2
 
 def logify(fn):
     '''Decorator for adding tracing messages to the call of a function'''
-    #def debuglog2(fn):
+
     def new(*args, **kwargs):
         global indent
         global indent_amount
@@ -104,8 +106,7 @@ def logify(fn):
             debug_logger.debug(
                             "End...",
                             extra={'funcNameExtra': extra,
-                                   'indent': indent_spaces
-                                  }
+                                   'indent': indent_spaces}
                                 )
             indent = max(indent - indent_amount, 0)
         return result
@@ -118,9 +119,10 @@ def logify(fn):
 
     return new
 
+
 def logtrace(funcOrClass):
-    '''Decorator and function that sets up a function to be traced and 
-    changes a class so that its functions are traced
+    '''Decorator and function that sets up a function to be traced and
+       changes a class so that its functions are traced
     '''
     if isinstance(funcOrClass, type):
         for name in dir(funcOrClass):
@@ -133,12 +135,13 @@ def logtrace(funcOrClass):
 
     return funcOrClass
 
+
 def logtrace_class(cls):
     '''Changes a class so that all of its methods are traced'''
     if isinstance(cls, type):
         for name in dir(cls):
             func = getattr(cls, name)
-            if callable(func) and type(func) == types.MethodType:
+            if callable(func) and isinstance(func, types.MethodType):
                 setattr(cls, name, logify(func))
     return cls
 
@@ -164,7 +167,7 @@ NORMAL = "\033[0m"
 
 def indentlog(message):
     global log, indStr, indent
-    print("%s%s" %(indStr*indent, message), file=log)
+    print("%s%s" % (indStr * indent, message), file=log)
     log.flush()
 
 
@@ -175,11 +178,10 @@ def shortstr(obj):
     """
     if "wx." in str(obj.__class__) or obj.__class__.__name__.startswith("wx"):
         shortclassname = obj.__class__.__name__
-        ##shortclassname = str(obj.__class__).split('.')[-1]
         if hasattr(obj, "blockItem") and hasattr(obj.blockItem, "blockName"):
-            moreInfo = "block:'%s'" %obj.blockItem.blockName
+            moreInfo = "block:'%s'" % obj.blockItem.blockName
         else:
-            moreInfo = "at %d" %id(obj)
+            moreInfo = "at %d" % id(obj)
         return "<%s %s>" % (shortclassname, moreInfo)
     else:
         return str(obj)
@@ -192,8 +194,8 @@ def formatAllArgs(args, kwds):
     allargs = []
     for item in args:
         allargs.append('%s' % shortstr(item))
-    for key,item in list(kwds.items()):
-        allargs.append('%s=%s' % (key,shortstr(item)))
+    for key, item in list(kwds.items()):
+        allargs.append('%s=%s' % (key, shortstr(item)))
     formattedArgs = ', '.join(allargs)
     if len(formattedArgs) > 150:
         return formattedArgs[:146] + " ..."
@@ -202,46 +204,58 @@ def formatAllArgs(args, kwds):
 
 def logfunction(theFunction, displayName=None):
     """a decorator."""
-    if not displayName: displayName = theFunction.__name__
+    if not displayName:
+        displayName = theFunction.__name__
 
     def _wrapper(*args, **kwds):
         global indent
         argstr = formatAllArgs(args, kwds)
 
         # Log the entry into the function
-        indentlog("%s%s%s  (%s) " % (BOLDRED,displayName,NORMAL, argstr))
+        indentlog("%s%s%s  (%s) " % (BOLDRED, displayName, NORMAL, argstr))
         log.flush()
 
         indent += 1
-        returnval = theFunction(*args,**kwds)
+        returnval = theFunction(*args, **kwds)
         indent -= 1
 
         # Log return
-        ##indentlog("return: %s"% shortstr(returnval)
+        # #indentlog("return: %s"% shortstr(returnval)
         return returnval
     return _wrapper
 
 
 def logmethod(theMethod, displayName=None):
-    """use this for class or instance methods, it formats with the object out front."""
-    if not displayName: displayName = theMethod.__name__
+    """use this for class or instance methods,
+       it formats with the object out front.
+    """
+    if not displayName:
+        displayName = theMethod.__name__
+
     def _methodWrapper(self, *args, **kwds):
-        "Use this one for instance or class methods"
+        """Use this one for instance or class methods
+        """
         global indent
 
         argstr = formatAllArgs(args, kwds)
         selfstr = shortstr(self)
-
-        #print >> log,"%s%s.  %s  (%s) " % (indStr*indent,selfstr,methodname,argstr)
-        indentlog("%s.%s%s%s  (%s) " % (selfstr,  BOLDRED,theMethod.__name__,NORMAL, argstr))
+        indentlog("%s.%s%s%s  (%s) " % (selfstr,
+                                        BOLDRED,
+                                        theMethod.__name__,
+                                        NORMAL,
+                                        argstr))
         log.flush()
 
         indent += 1
 
         if theMethod.__name__ == 'OnSize':
-            indentlog("position, size = %s%s %s%s" %(BOLDBLUE, self.GetPosition(), self.GetSize(), NORMAL))
+            indentlog("position, size = %s%s %s%s" % (
+                                                    BOLDBLUE,
+                                                    self.GetPosition(),
+                                                    self.GetSize(),
+                                                    NORMAL))
 
-        returnval = theMethod(self, *args,**kwds)
+        returnval = theMethod(self, *args, **kwds)
 
         indent -= 1
 
@@ -259,18 +273,23 @@ def logclass(cls, methodsAsFunctions=False,
            ...
         C = logclass(C)
 
-        :param methodsAsFunctions: set to True if you always want methodname first
-            in the display.  Probably breaks if you're using class/staticmethods?
+        :param methodsAsFunctions: set to True if you always want methodname
+                                   first in the display.  Probably breaks if
+                                   you're using class/staticmethods?
 
     """
-
-    allow = lambda s: re.match(logMatch, s) and not re.match(logNotMatch, s) and \
-          s not in ('__str__','__repr__')
+    def allow(s):
+        if (re.match(logMatch, s) and
+                not re.match(logNotMatch, s) and
+                s not in ('__str__', '__repr__')):
+            return True
+        return False
 
     namesToCheck = list(cls.__dict__.keys())
 
     for name in namesToCheck:
-        if not allow(name): continue
+        if not allow(name):
+            continue
         # unbound methods show up as mere functions in the values of
         # cls.__dict__,so we have to go through getattr
         value = getattr(cls, name)
@@ -278,22 +297,25 @@ def logclass(cls, methodsAsFunctions=False,
         if methodsAsFunctions and callable(value):
             setattr(cls, name, logfunction(value))
         elif isinstance(value, types.MethodType):
-            #a normal instance method
-            if value.__self__ == None:
+            # a normal instance method
+            if value.__self__ is None:
                 setattr(cls, name, logmethod(value))
 
-            #class & static method are more complex.
-            #a class method
+            # class & static method are more complex.
+            # a class method
             elif value.__self__ == cls:
                 w = logmethod(value.__func__,
-                              displayName="%s.%s" %(cls.__name__, value.__name__))
+                              displayName="%s.%s" %
+                              (cls.__name__, value.__name__))
                 setattr(cls, name, classmethod(w))
-            else: assert False
+            else:
+                assert False
 
-        #a static method
+        # a static method
         elif isinstance(value, types.FunctionType):
-            w = logfunction(value,
-                            displayName="%s.%s" %(cls.__name__, value.__name__))
+            w = logfunction(
+                    value,
+                    displayName="%s.%s" % (cls.__name__, value.__name__))
             setattr(cls, name, staticmethod(w))
     return cls
 
@@ -309,41 +331,43 @@ class LogMetaClass(type):
     yet.
     """
 
-    def __new__(cls,classname,bases,classdict):
+    def __new__(cls, classname, bases, classdict):
         logmatch = re.compile(classdict.get('logMatch', '.*'))
         lognotmatch = re.compile(classdict.get('logNotMatch', 'nesdfasdf'))
 
-        for attr,item in list(classdict.items()):
+        for attr, item in list(classdict.items()):
             if (callable(item) and logmatch.match(attr) and
                     not lognotmatch.match(attr)):
-                classdict['_H_%s'%attr] = item    # rebind the method
-                classdict[attr] = logmethod(item) # replace method by wrapper
+                classdict['_H_%s' % attr] = item    # rebind the method
+                classdict[attr] = logmethod(item)  # replace method by wrapper
 
-        return type.__new__(cls,classname, bases, classdict)
+        return type.__new__(cls, classname, bases, classdict)
 
 
 # ---------------------------- Tests and examples ----------------------------
-
-if __name__=='__main__':
-    print();
+if __name__ == '__main__':
+    print()
     print("------------------- single function logging ---------------")
+
     @logfunction
     def test():
         return 42
 
     test()
 
-    print();
+    print()
     print("------------------- single method logging --------------")
+
     class Test1(object):
         def __init__(self):
             self.a = 10
 
         @logmethod
-        def add(self,a,b): return a + b
+        def add(self, a, b):
+            return a + b
 
         @logmethod
-        def fac(self,val):
+        def fac(self, val):
             if val == 1:
                 return 1
             else:
@@ -357,22 +381,25 @@ if __name__=='__main__':
                 return val * self.fac2(val-1)
 
     t = Test1()
-    t.add(5,6)
+    t.add(5, 6)
     t.fac(4)
     print("--- tagged as @logfunction, doesn't understand 'self' is special:")
     t.fac2(4)
 
-
-    print();
+    print()
     print("""---------------- class "decorator" usage --------------""")
+
     class Test2(object):
-        #will be ignored
+        # will be ignored
         def __init__(self):
             self.a = 10
-        def ignoreThis(self): pass
 
+        def ignoreThis(self):
+            pass
 
-        def add(self, a, b):return a + b
+        def add(self, a, b):
+            return a + b
+
         def fac(self, val):
             if val == 1:
                 return 1
@@ -386,7 +413,9 @@ if __name__=='__main__':
     t2.fac(4)
     t2.ignoreThis()
 
-    print(); print("-------------------- metaclass usage ------------------")
+    print()
+    print("-------------------- metaclass usage ------------------")
+
     class Test3(object, metaclass=LogMetaClass):
         logNotMatch = 'ignoreThis'
 
@@ -398,12 +427,15 @@ if __name__=='__main__':
                 return 1
             else:
                 return val * self.fac(val - 1)
-        def ignoreThis(self): pass
+
+        def ignoreThis(self):
+            pass
+
     t3 = Test3()
     t3.fac(4)
     t3.ignoreThis()
 
-    print();
+    print()
     print("-------------- testing static & classmethods --------------")
 
     class Test4(object):

@@ -1,6 +1,6 @@
 import os
 
-####################################
+
 class EnvUtils(object):
     ##################
     _OSKEY = frozenset(["OS",
@@ -35,20 +35,24 @@ class EnvUtils(object):
         return list()
 
     @staticmethod
-    def build_set_env_cmd(asExport = True, clean=False):
+    def build_set_env_cmd(asExport=True, clean=False):
         """ serialize the cmd to setenv or export
         """
         cd = dict()
-        if clean == True:
+        if clean is True:
             for i in os.environ:
                 if not i.startswith("_"):
                     cd[i] = os.environ[i]
         else:
             cd = os.environ
         if asExport:
-            return '\n'.join(['export %s=%s'%(key,value) for key,value in list(cd.items())])+'\n'
+            return '\n'.join(
+                ['export %s=%s' % (key, value)
+                    for key, value in list(cd.items())])+'\n'
         else:
-            return '\n'.join(['setenv %s %r'%(key,value) for key,value in list(cd.items())])+'\n'
+            return '\n'.join(
+                ['setenv %s %r' % (key, value)
+                    for key, value in list(cd.items())])+'\n'
     '''
     def init_file_system(self, try_install_config = False):
         """Deal with resources not done
