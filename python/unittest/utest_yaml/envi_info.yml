@@ -1,0 +1,78 @@
+# Envi Info for config and packs
+site:
+  name: Paris
+  http: http://www.erictexier.com/en
+
+# be sure for this directory to be created -- in dev for now in my area
+mainrelease : ${DSK_ENV_ROOT}/eric/packages
+
+# a list of dictionary to simplify argument in dev tool used
+dev_user:
+  -  login: eric
+     email: erictexier@gmail.com
+     shotgun_name: Eric Texier
+     dev_path: ${DSK_ENV_ROOT}/eric/packages
+     dev_path_configs: /mnt/tools/dev/eric/configs_and_packs
+     projects: [dev_show]
+
+
+# info dictionary for each repo
+repo_info:
+  -  name: devsoftkit
+     new_version: true
+     do_version: true
+     pack_update: False
+     shortname: dev
+     location:
+       path: ''
+       type: git
+       branch: ''
+
+  -  name: envi
+     new_version: false
+     do_version: false
+     pack_update: false
+     alternative_release_areas: '/u/tools'
+     shortname: dskenv
+     location:
+       path: ''
+       type: git
+       branch: ''
+
+main_app: &app_types
+  - [maya, maya,"ma,mb"]
+  - [maya, mayasgtk,"ma,mb"]
+  - [maya, mayapy,"ma,mb"]
+  - [maya, mayapysgtk,"ma,mb"]
+  - [Nuke, nuke,"nk"]
+  - [Nuke, nukesgtk,"nk"]
+  - [rv, rv,""]
+  - [rv, rvsgtk,""]
+  - [rv, rvlinker,""]
+  - [rv, rvio,""]
+  - [houdini ,houdini, "hip"]
+  - [houdini ,houdinisgtk, "hip"]
+  - [konsole, shell,""]
+
+projects:
+  -  project_name: dev_show
+     path_configs: /mnt/tools
+     applications:
+      - [maya, maya,"ma,mb"]
+      - [maya,mayasgtk,"ma,mb"]
+      - [Nuke, nuke,"nk"]
+      - [Nuke, nukesgtk,"nk"]
+      - [rv, rv,"png,exr,jpg,mov"]
+      - [rv, rvsgtk,"png,exr,jpg,mov"]
+
+
+  -  project_name: default_show
+     path_configs: ['/mnt/tools']
+
+# this is a list of default repo to install when not specified
+default_install:
+  - devsoftkit
+  - envi
+
+
+

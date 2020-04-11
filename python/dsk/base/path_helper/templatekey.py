@@ -588,7 +588,8 @@ class StringKey(TemplateKey):
             # so here we are checking that there are occurances of
             # that pattern in the string
             if self._filter_regex_u.search(u_value):
-                self._last_error = "%s 1 Illegal value '%s' does not fit filter_by '%s'" % (self, value, self.filter_by)
+                self._last_error = "%s 1 Illegal value '%s' does not fit"
+                            " filter_by '%s'" % (self, value, self.filter_by)
                 return False
 
         elif self._custom_regex_u:

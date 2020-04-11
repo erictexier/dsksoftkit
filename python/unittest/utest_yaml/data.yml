@@ -1,0 +1,31 @@
+publish_type_to_extensions: &file_types
+  - [Alembic Cache, abc]
+  - [3dsmax Scene, max]
+  - [NukeStudio Project, hrox]
+  - [Houdini Scene, hip, hipnc]
+  - [Maya Scene, ma, mb]
+  - [Nuke Script, nk]
+  - [Photoshop Image, psd, psb]
+  - [Rendered Image, dpx, exr]
+  - [Texture, tiff, tx, tga, dds]
+  - [Image, jpeg, jpg, png]
+  - [Movie, mov, mp4]
+
+common.settings.tk-multi-publish2.publish_file:
+  name: Publish to Shotgun
+  hook: "{config}/tk-multi-publish2/basic/publish_file.py"
+  settings:
+    File Types: *file_types
+
+common.settings.tk-multi-publish2.upload_version:
+  name: Upload for review
+  hook: "{config}/tk-multi-publish2/basic/upload_version.py"
+  settings: {}
+
+asset_texture_name: "{Asset}_[{variant_name}]_{texture_name}_{texture_type}_[{texture_subtype}]_[{declension}]_{resolution}_{depth}[_v{version}]"
+
+
+file_asset_publish_texture_images: '@asset_texture_name[.{udim}].{texture_ext}'
+
+includes:
+  - more/add_to.yml
