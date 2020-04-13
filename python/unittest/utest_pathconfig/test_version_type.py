@@ -4,19 +4,23 @@ import os
 
 from dsk.base.path_helper.pathconfig import PathConfig
 from dsk.base.path_helper import template
-from dsk.base.resources.dsk_constants import ROOT_CONFIG_DIR,NAME_CONFIG_DIR
-from dskenv.dskenv_constants import DSK_MOUNTED_ROOT,DSK_DEV_AREA
+from dsk.base.resources.dsk_constants import ROOT_CONFIG_DIR, NAME_CONFIG_DIR
+from dskenv.dskenv_constants import DSK_MOUNTED_ROOT, DSK_DEV_AREA
 from dskenv.base_env import BaseEnv
-root_envi = os.path.join(os.sep,DSK_MOUNTED_ROOT,DSK_DEV_AREA,
+root_envi = os.path.join(os.sep,
+                         DSK_MOUNTED_ROOT,DSK_DEV_AREA,
                          ROOT_CONFIG_DIR,
                          NAME_CONFIG_DIR)
 
-root_envi_user = os.path.join(os.environ.get("DSK_ENV_ROOT"),   # this is a dev user config
+# this is a dev user config
+root_envi_user = os.path.join(os.environ.get("DSK_ENV_ROOT"),
                               'eric',
                               ROOT_CONFIG_DIR,
                               NAME_CONFIG_DIR)
 
-project_file = os.path.join(os.sep,DSK_MOUNTED_ROOT,"shotgun",
+project_file = os.path.join(os.sep,
+                            DSK_MOUNTED_ROOT,
+                            "shotgun",
                             "git",
                             "tk-config-default2",
                             "env",
@@ -35,7 +39,7 @@ def test_config():
 
     apackdir = os.path.join(root_envi,BaseEnv.envi_iddir(),BaseEnv.pack_tag())
     aconfdir = os.path.join(root_envi,BaseEnv.envi_iddir(),BaseEnv.config_tag())
-    envi_info = '/mnt/dev/dsk_configuration/envi/configs_and_packs/envi_info.yml'
+    envi_info = os.path.join(os.environ.get('DSKENVPATH'), 'configs_and_packs/envi_info.yml')
     bad_envi_info = '/mnt1/dev/dsk_configuration/envi/configs_and_packs/envi_info.yml'
     #d = {'Config': root_envi}
     d = {'Config': ('envi'),'name' : ('info')}
@@ -51,11 +55,11 @@ def test_config():
     assert x['envi_info'].validate_and_get_fields(bad_envi_info)  == None
 
 
-@pytest.mark.skipif(False, reason="too long to wait")
+@pytest.mark.skipif(True, reason="too long to wait")
 def test_add_config():
     pc = PathConfig(root_envi, ROOT_CONFIG_DIR)
 
-
+@pytest.mark.skipif(False, reason="just display")
 def test_project_config():
     from dsk.base.app.custom_menu import get_templates_config
     data = get_templates_config(project_file)
