@@ -1,30 +1,24 @@
 # Copyright (c) 2013 Shotgun Software Inc.
-# 
+#
 # CONFIDENTIAL AND PROPRIETARY
-# 
-# This work is provided "AS IS" and subject to the Shotgun Pipeline Toolkit 
+#
+# This work is provided "AS IS" and subject to the Shotgun Pipeline Toolkit
 # Source Code License included in this distribution package. See LICENSE.
-# By accessing, using, copying or modifying this work you indicate your 
-# agreement to the Shotgun Pipeline Toolkit Source Code License. All rights 
+# By accessing, using, copying or modifying this work you indicate your
+# agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Shotgun Software Inc.
 
 """
 Classes for fields on TemplatePaths and TemplateStrings
 """
 
-import re
 import sys
 import datetime
-import sys
 import six
-
-if sys.version_info[0] >= 3:
-    from six import string_types as basestring
-    from collections.abc import Callable
-else:
-    from collections import Callable
-from dsk.base.resources import dsk_constants 
+from six.moves import zip
 from dsk.base.path_helper.errors import DevError
+from dsk.base.resources import dsk_constants as constants
+from dsk.base.path_helper import sgre as re
 
 class TemplateKey(object):
     """
@@ -67,7 +61,7 @@ class TemplateKey(object):
         shotgun_field_name=None,
         exclusions=None,
         abstract=False,
-        length=None
+        length=None,
     ):
         """
         :param str name: Name by which the key will be referred.
@@ -102,27 +96,29 @@ class TemplateKey(object):
         self._last_error = ""
 
         # check that the key name doesn't contain invalid characters
-        if not re.match(r"^%s$" % dsk_constants.TEMPLATE_KEY_NAME_REGEX, name):
-            raise DevError(
+        if not re.match(r"^%s$" % constants.TEMPLATE_KEY_NAME_REGEX, name):
+            raise DskError(
                 "%s: Name contains invalid characters. "
                 "Valid characters are %s."
-                % (self, dsk_constants.VALID_TEMPLATE_KEY_NAME_DESC))
+                % (self, constants.VALID_TEMPLATE_KEY_NAME_DESC)
+            )
 
         # Validation
         if self.shotgun_field_name and not self.shotgun_entity_type:
-            raise DevError(
-                "%s: Shotgun field requires a shotgun entity be set." % self)
+            raise DskError(
+                "%s: Shotgun field requires a shotgun entity be set." % self
+            )
 
         if self.is_abstract and self.default is None:
-            raise DevError(
-                "%s: Fields marked as abstract needs to have a default value!"
-                % self)
+            raise DskError(
+                "%s: Fields marked as abstract needs to have a default value!" % self
+            )
 
         if not ((self.default is None) or self.validate(self.default)):
-            raise DevError(self._last_error)
-        
+            raise DskError(self._last_error)
+
         if not all(self.validate(choice) for choice in self.choices):
-            raise DevError(self._last_error)
+            raise DskError(self._last_error)
 
     def _get_default(self):
         """
@@ -131,7 +127,7 @@ class TemplateKey(object):
 
         :returns: The default value.
         """
-        if isinstance(self._default, Callable):
+        if isinstance(self._default, six.moves.collections_abc.Callable):
             return self._default()
         else:
             return self._default
@@ -214,21 +210,22 @@ class TemplateKey(object):
         :param ignore_type: If true, no validation will be carried out prior to casting.
 
         :returns: String version of value as processed by the key.
-        :raises: :class:`DevError` if value is not valid for the key.
+        :raises: :class:`DskError` if value is not valid for the key.
         """
         if value is None:
             if self.default is None:
-                raise DevError(
-                    "No value provided and no default available for %s" % self)
+                raise DskError(
+                    "No value provided and no default available for %s" % self
+                )
             else:
                 value = self.default
         elif ignore_type:
-            return value if isinstance(value, basestring) else str(value)
+            return value if isinstance(value, six.string_types) else str(value)
 
         if self.validate(value):
             return self._as_string(value)
         else:
-            raise DevError(self._last_error)
+            raise DskError(self._last_error)
 
     def value_from_str(self, str_value):
         """
@@ -240,7 +237,7 @@ class TemplateKey(object):
         if self.validate(str_value):
             value = self._as_value(str_value)
         else:
-            raise DevError(self._last_error)
+            raise DskError(self._last_error)
         return value
 
     def validate(self, value):
@@ -266,25 +263,30 @@ class TemplateKey(object):
         :returns: Bool
         """
 
-        str_value = value if isinstance(value, basestring) else str(value)
+        str_value = value if isinstance(value, six.string_types) else str(value)
 
         # We are not case sensitive
         if str_value.lower() in [str(x).lower() for x in self.exclusions]:
             self._last_error = "%s Illegal value: %s is forbidden for this key." % (
-                self, value)
+                self,
+                value,
+            )
             return False
 
         if value is not None and self.choices:
             if str_value.lower() not in [str(x).lower() for x in self.choices]:
                 self._last_error = "%s Illegal value: '%s' not in choices: %s" % (
                     self,
-                    value, str(self.choices))
+                    value,
+                    str(self.choices),
+                )
                 return False
 
         if self.length is not None and len(str_value) != self.length:
             self._last_error = (
                 "%s Illegal value: '%s' does not have a length of "
-                "%d characters." % (self, value, self.length))
+                "%d characters." % (self, value, self.length)
+            )
             return False
 
         return True
@@ -303,6 +305,7 @@ class StringKey(TemplateKey):
     """
     :class:`TemplateKey` representing a string value.
     """
+
     def __init__(
         self,
         name,
@@ -315,28 +318,22 @@ class StringKey(TemplateKey):
         abstract=False,
         length=None,
         subset=None,
-        subset_format=None):
+        subset_format=None,
+    ):
         """
         :param str name: Name by which the key will be referred.
         :param str default: Default value for the key.
-        :param choices: List of possible values for this key. Can be either
-                        a list or a dictionary of choice:label pairs.
-        :param str filter_by: Name of filter type to limit values for string. 
-                              Currently only accepted values are
-                              'alphanumeric', 'alpha', None and a regex string.
-        :param str shotgun_entity_type: For keys directly linked to a shotgun
-                                        field, the entity type.
-        :param str shotgun_field_name: For keys directly linked to a shotgun
-                                       field, the field name.
+        :param choices: List of possible values for this key. Can be either a list or a dictionary
+                        of choice:label pairs.
+        :param str filter_by: Name of filter type to limit values for string. Currently
+                              only accepted values are 'alphanumeric', 'alpha', None and a regex string.
+        :param str shotgun_entity_type: For keys directly linked to a shotgun field, the entity type.
+        :param str shotgun_field_name: For keys directly linked to a shotgun field, the field name.
         :param list exclusions: List of forbidden values.
-        :param bool abstract: Flagging that this should be treated as an
-                              abstract key.
-        :param int length: If non-None, indicating that the value should be of
-                           a fixed length.
-        :param str subset: Regular expression defining a subset of the value
-                           to use.
-        :param str subset_format: String to express the formatting of subset
-                                  tokens.
+        :param bool abstract: Flagging that this should be treated as an abstract key.
+        :param int length: If non-None, indicating that the value should be of a fixed length.
+        :param str subset: Regular expression defining a subset of the value to use.
+        :param str subset_format: String to express the formatting of subset tokens.
         """
         self._filter_by = filter_by
 
@@ -349,30 +346,20 @@ class StringKey(TemplateKey):
         self._filter_regex_u = None
         self._custom_regex_u = None
 
-        if filter_by == "alphanumeric":
-            if sys.version_info[0] >= 3:
-                self._filter_regex_u = re.compile(r"[\W_]")
-            else:
-                self._filter_regex_u = re.compile(r"[\W_]", re.UNICODE)
+        if self._filter_by == "alphanumeric":
+            self._filter_regex_u = re.compile(r"[\W_]", re.UNICODE)
 
-        elif filter_by == "alpha":
-            if sys.version_info[0] >= 3:
-                self._filter_regex_u = re.compile(r"[\w_0-9]")
-            else:
-                self._filter_regex_u = re.compile(r"[\W_0-9]", re.UNICODE)
+        elif self._filter_by == "alpha":
+            self._filter_regex_u = re.compile(r"[\W_0-9]", re.UNICODE)
 
-        elif filter_by is not None:
+        elif self._filter_by is not None:
             # filter_by is a regex
-            if sys.version_info[0] >= 3:
-                self._custom_regex_u = re.compile(self._filter_by)
-            else:
-                self._custom_regex_u = re.compile(self._filter_by, re.UNICODE)
- 
+            self._custom_regex_u = re.compile(self._filter_by, re.UNICODE)
+
         self._subset_str = subset
         self._subset_format = subset_format
         if self._subset_format and sys.version_info < (2, 6):
-            raise DevError(
-                    "Subset formatting in template keys require python 2.6+!")
+            raise DskError("Subset formatting in template keys require python 2.6+!")
 
         self._subset_str = subset
 
@@ -380,9 +367,9 @@ class StringKey(TemplateKey):
             try:
                 self._subset_regex = re.compile(subset, re.UNICODE)
             except Exception as e:
-                raise DevError(
-                    "Template key %s: Invalid subset regex '%s': %s" % (
-                                                            name, subset, e))
+                raise DskError(
+                    "Template key %s: Invalid subset regex '%s': %s" % (name, subset, e)
+                )
 
         else:
             self._subset_regex = None
@@ -395,13 +382,14 @@ class StringKey(TemplateKey):
             shotgun_field_name=shotgun_field_name,
             exclusions=exclusions,
             abstract=abstract,
-            length=length
+            length=length,
         )
 
         if self._subset_format and not self._subset_str:
-            raise DevError(
+            raise DskError(
                 "%s: Cannot specify subset_format parameter without a subset parameter."
-                % self)
+                % self
+            )
 
     @property
     def filter_by(self):
@@ -414,12 +402,10 @@ class StringKey(TemplateKey):
     @property
     def subset(self):
         """
-        Returns a regular expression describing how values should be
-        transformed when they are being injected into template paths 
-        and strings.
+        Returns a regular expression describing how values should be transformed
+        when they are being injected into template paths and strings.
 
-        The format for a subset is a regular expression containing
-        regex groups,
+        The format for a subset is a regular expression containing regex groups,
         for example::
 
             # grabs capital letters of the two first words
@@ -439,13 +425,10 @@ class StringKey(TemplateKey):
                 "first_three_characters": "John Smith"}
             )
 
-            # into "JS" for the {user_initials} key and "Joh" for the
-            # {first_three_characters} key
+            # into "JS" for the {user_initials} key and "Joh" for the {first_three_characters} key
 
-        If the subset expression contains more than one ``(regex group)``
-        to extract, the groups
-        will be concatenated together in the order they are found.
-        If you want greater control
+        If the subset expression contains more than one ``(regex group)`` to extract, the groups
+        will be concatenated together in the order they are found. If you want greater control
         over this, see :meth:`subset_format`.
         """
         return self._subset_str
@@ -453,10 +436,8 @@ class StringKey(TemplateKey):
     @property
     def subset_format(self):
         """
-        Returns the ``subset_format`` string for the given template key.
-        This string is used in conjunction with the
-        :meth:`subset` parameter and allows for the formatting of the values
-        that are being extracted::
+        Returns the ``subset_format`` string for the given template key. This string is used in conjunction with the
+        :meth:`subset` parameter and allows for the formatting of the values that are being extracted::
 
             # grabs capital letters of the two first words
             user_initials_backwards:
@@ -470,14 +451,11 @@ class StringKey(TemplateKey):
 
             # into "SJ" for the user_initials_backwards key.
 
-        The formatting used for the string is standard python custom string
-        formatting, where you can reference
-        each regex group with an integer index. Read more about standard python
-        string formatting here:
+        The formatting used for the string is standard python custom string formatting, where you can reference
+        each regex group with an integer index. Read more about standard python string formatting here:
         https://docs.python.org/2/library/string.html#custom-string-formatting
 
-        .. note:: Subset format is using python string formatting and is only
-                  compatible with
+        .. note:: Subset format is using python string formatting and is only compatible with
                   with Python 2.6+.
         """
         return self._subset_format
@@ -495,8 +473,7 @@ class StringKey(TemplateKey):
 
     def value_from_str(self, str_value):
         """
-        Validates and translates a string into an appropriate value
-        for this key.
+        Validates and translates a string into an appropriate value for this key.
 
         :param str_value: The string to translate.
         :returns: The translated value.
@@ -515,7 +492,7 @@ class StringKey(TemplateKey):
         if self.__validate(str_value, validate_transforms=False):
             value = self._as_value(str_value)
         else:
-            raise DevError(self._last_error)
+            raise DskError(self._last_error)
         return value
 
     def _as_string(self, value):
@@ -633,11 +610,7 @@ class TimestampKey(TemplateKey):
     :class:`TemplateKey` representing a time or date string formatted with strftime.
     """
 
-    def __init__(
-        self,
-        name,
-        default=None,
-        format_spec="%Y-%m-%d-%H-%M-%S"):
+    def __init__(self, name, default=None, format_spec="%Y-%m-%d-%H-%M-%S"):
         """
         :param str name: Name by which the key will be referred.
         :param default: Default value for this field. Acceptable values are:
@@ -659,12 +632,14 @@ class TimestampKey(TemplateKey):
         # default value, so format_spec needs to be set first. But if I am testing format_spec
         # before calling the base class, then repr will crash since self.name won't have been set
         # yet.
-        if isinstance(format_spec, basestring) is False:
-            raise DevError("format_spec for <Sgtk TimestampKey %s> is not of type string: %s" %
-                            (name, format_spec.__class__.__name__))
+        if isinstance(format_spec, six.string_types) is False:
+            raise DskError(
+                "format_spec for <Sgtk TimestampKey %s> is not of type string: %s"
+                % (name, format_spec.__class__.__name__)
+            )
         self._format_spec = format_spec
 
-        if isinstance(default, basestring):
+        if isinstance(default, six.string_types):
             # if the user passes in now or utc, we'll generate the current time as the default time.
             if default.lower() == "now":
                 default = self.__get_current_time
@@ -675,14 +650,15 @@ class TimestampKey(TemplateKey):
                 # convert the string value into an actual value because the default is expected to
                 # be a value and not a string, so we'll validate right away.
                 if not self.validate(default):
-                    raise DevError(self._last_error)
+                    raise DskError(self._last_error)
                 # If we are here everything went well, so convert the string to an actual value.
                 default = datetime.datetime.strptime(default, self.format_spec)
             # Base class will validate other values using the format specifier.
         elif default is not None:
-            raise DevError(
+            raise DskError(
                 "default for <Sgtk TimestampKey %s> is not of type string or None: %s"
-                % (name, default.__class__.__name__))
+                % (name, default.__class__.__name__)
+            )
 
         super(TimestampKey, self).__init__(name, default=default)
 
@@ -726,7 +702,7 @@ class TimestampKey(TemplateKey):
 
         :returns: Bool
         """
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             # If we have a string we have to actually try to convert the string to see it if matches
             # the expected format.
             try:
@@ -741,7 +717,8 @@ class TimestampKey(TemplateKey):
         else:
             self._last_error = (
                 "Invalid type: expecting string or datetime.datetime, not %s"
-                % value.__class__.__name__)
+                % value.__class__.__name__
+            )
             return False
 
     def _as_string(self, value):
@@ -770,6 +747,7 @@ class IntegerKey(TemplateKey):
     """
     :class:`TemplateKey` representing an integer value.
     """
+
     # Matches one non-zero digit follow by any number of digits.
     _NON_ZERO_POSITIVE_INTEGER_EXP = r"[1-9]\d*"
     # For the next two regular expressions, the ^ and $ are important to prevent partial matches.
@@ -789,7 +767,8 @@ class IntegerKey(TemplateKey):
         exclusions=None,
         abstract=False,
         length=None,
-        strict_matching=None):
+        strict_matching=None,
+    ):
         """
         :param str name: Name by which the key will be referred.
         :param int default: Default value for this key.
@@ -822,7 +801,8 @@ class IntegerKey(TemplateKey):
             shotgun_field_name=shotgun_field_name,
             exclusions=exclusions,
             abstract=abstract,
-            length=length)
+            length=length,
+        )
 
     @property
     def format_spec(self):
@@ -848,24 +828,26 @@ class IntegerKey(TemplateKey):
         :param name: Name of this template key.
         :param format_spec: Parameter to be validated.
 
-        :raises DevError: Raised when the parameter is not a string that maching a %d format
+        :raises DskError: Raised when the parameter is not a string that maching a %d format
                            option.
         """
         # No format spec means no formatting options.
         if format_spec is None:
             return
 
-        if not isinstance(format_spec, basestring):
+        if not isinstance(format_spec, six.string_types):
             msg = "format_spec for IntegerKey %s is not of type string: %s"
-            raise DevError(msg % (name, format_spec))
+            raise DskError(msg % (name, format_spec))
 
         if len(format_spec) == 0:
-            raise DevError("format_spec can't be empty.")
+            raise DskError("format_spec can't be empty.")
 
         matches = self._FORMAT_SPEC_RE.match(format_spec)
         if not matches:
-            raise DevError("format_spec for <Sgtk IntegerKey %s> has to either be a number (e.g. '3') or "
-                            "a 0 followed by a number (e.g. '03'), not '%s'" % (name, format_spec))
+            raise DskError(
+                "format_spec for <Sgtk IntegerKey %s> has to either be a number (e.g. '3') or "
+                "a 0 followed by a number (e.g. '03'), not '%s'" % (name, format_spec)
+            )
 
         groups = matches.groups()
         # groups[0] is either '' or '0', in which case the padding is ' '
@@ -881,17 +863,17 @@ class IntegerKey(TemplateKey):
         :param name: Name of this template key.
         :param strict_matching: Parameter to be validated.
 
-        :raises DevError: Raised when the parameter is not a boolean.
+        :raises DskError: Raised when the parameter is not a boolean.
         """
         # make sure that strict_matching is not set or that it is a boolean
         if not (strict_matching is None or isinstance(strict_matching, bool)):
             msg = "strict_matching for <Sgtk IntegerKey %s> is not of type boolean: %s"
-            raise DevError(msg % (name, str(strict_matching)))
+            raise DskError(msg % (name, str(strict_matching)))
 
         # If there is a format and strict_matching is set, there's an error, since there
         # is no format to enforce or not.
         if self._format_spec is None and strict_matching is not None:
-            raise DevError("strict_matching can't be set if there is no format_spec")
+            raise DskError("strict_matching can't be set if there is no format_spec")
 
         # By default, if strict_matching is not set but there is a format spec, we'll
         # strictly match.
@@ -919,14 +901,17 @@ class IntegerKey(TemplateKey):
 
     def validate(self, value):
         if value is not None:
-            if isinstance(value, basestring):
+            if isinstance(value, six.string_types):
                 # We have a string, make sure it loosely or strictly matches the format.
                 if self.strict_matching and not self._strictly_matches(value):
                     return False
                 elif not self.strict_matching and not self._loosely_matches(value):
                     return False
             elif not isinstance(value, int):
-                self._last_error = "%s Illegal value '%s', expected an Integer" % (self, value)
+                self._last_error = "%s Illegal value '%s', expected an Integer" % (
+                    self,
+                    value,
+                )
                 return False
             return super(IntegerKey, self).validate(value)
         return True
@@ -952,7 +937,10 @@ class IntegerKey(TemplateKey):
             value = value.lstrip()
         # Is digit is how we tested for a number before strict_matching was introduced, so don't change that behaviour
         if not value.isdigit():
-            self._last_error = "%s Illegal value '%s', expected an Integer" % (self, value)
+            self._last_error = "%s Illegal value '%s', expected an Integer" % (
+                self,
+                value,
+            )
             return False
         return True
 
@@ -966,7 +954,11 @@ class IntegerKey(TemplateKey):
 
         :returns: True if the value strictly matches the format spec, False otherwise.
         """
-        error_msg = "%s Illegal value '%s', does not match format spec '%s'" % (self, value, self.format_spec)
+        error_msg = "%s Illegal value '%s', does not match format spec '%s'" % (
+            self,
+            value,
+            self.format_spec,
+        )
         # If there are more characters than the minimum size, we should have a non zero positive number
         if len(value) > self._minimum_width:
             if not self._NON_ZERO_POSITIVE_INTEGER_RE.match(value):
@@ -1052,23 +1044,24 @@ class SequenceKey(IntegerKey):
         '/mnt/proj/shot_2/publish/render.$F4.exr'
 
     """
-    
+
     # special keywork used when format is specified directly in value
     FRAMESPEC_FORMAT_INDICATOR = "FORMAT:"
     # valid format strings that can be used with this Key type
     VALID_FORMAT_STRINGS = ["%d", "#", "@", "$F", "<UDIM>", "$UDIM"]
     # flame sequence pattern regex ('[1234-5434]')
     FLAME_PATTERN_REGEX = r"^\[[0-9]+-[0-9]+\]$"
-    
+
     def __init__(
         self,
         name,
         default=None,
         choices=None,
-        format_spec='01',
+        format_spec="01",
         shotgun_entity_type=None,
         shotgun_field_name=None,
-        exclusions=None):
+        exclusions=None,
+    ):
         """
         :param str name: Name by which the key will be referred.
         :param str default: Default value for this key.
@@ -1082,14 +1075,16 @@ class SequenceKey(IntegerKey):
         """
         # determine the actual frame specs given the padding (format_spec)
         # and the allowed formats
-        self._frame_specs = [self._resolve_frame_spec(x, format_spec) for x in self.VALID_FORMAT_STRINGS ]
+        self._frame_specs = [
+            self._resolve_frame_spec(x, format_spec) for x in self.VALID_FORMAT_STRINGS
+        ]
 
         # all sequences are abstract by default and have a default value of %0Xd
         abstract = True
         if default is None:
             # default value is %d form
             default = self._resolve_frame_spec("%d", format_spec)
-        
+
         super(SequenceKey, self).__init__(
             name,
             default=default,
@@ -1099,9 +1094,11 @@ class SequenceKey(IntegerKey):
             shotgun_entity_type=shotgun_entity_type,
             shotgun_field_name=shotgun_field_name,
             exclusions=exclusions,
-            abstract=abstract)
+            abstract=abstract,
+        )
 
     def validate(self, value):
+
         # use a std error message
         full_format_strings = [
             "%s %s" % (self.FRAMESPEC_FORMAT_INDICATOR, x)
@@ -1145,6 +1142,7 @@ class SequenceKey(IntegerKey):
             return super(SequenceKey, self).validate(value)
 
     def _as_string(self, value):
+
         if isinstance(value, six.string_types) and value.startswith(
             self.FRAMESPEC_FORMAT_INDICATOR
         ):
@@ -1181,7 +1179,7 @@ class SequenceKey(IntegerKey):
         """
         Returns XYZ given the string "FORMAT:    XYZ"
         """
-        if isinstance(value, basestring) and value.startswith(
+        if isinstance(value, six.string_types) and value.startswith(
             self.FRAMESPEC_FORMAT_INDICATOR
         ):
             pattern = value.replace(self.FRAMESPEC_FORMAT_INDICATOR, "").strip()
@@ -1194,16 +1192,16 @@ class SequenceKey(IntegerKey):
         """
         Turns a format_string %d and a format_spec "03" into a sequence identifier (%03d)
         """
-        
+
         error_msg = "Illegal format pattern for framespec: '%s'. " % format_string
         error_msg += "Legal patterns are: %s" % ", ".join(self.VALID_FORMAT_STRINGS)
 
         if format_string not in self.VALID_FORMAT_STRINGS:
-            raise DevError(error_msg)
+            raise DskError(error_msg)
 
         if format_spec.startswith("0") and format_spec != "01":
             use_zero_padding = True
-        else: 
+        else:
             use_zero_padding = False
 
         places = int(format_spec) if format_spec.isdigit() else 1
@@ -1221,7 +1219,7 @@ class SequenceKey(IntegerKey):
                 # UDIM's aren't padded!
                 frame_spec = format_string
             else:
-                raise DevError(error_msg)
+                raise DskError(error_msg)
         else:
             # non zero padded rules
             if format_string == "%d":
@@ -1236,7 +1234,7 @@ class SequenceKey(IntegerKey):
                 # UDIM's aren't padded!
                 frame_spec = format_string
             else:
-                raise DevError(error_msg)
+                raise DskError(error_msg)
 
         return frame_spec
 
@@ -1255,7 +1253,7 @@ def make_keys(data):
         "str": StringKey,
         "int": IntegerKey,
         "sequence": SequenceKey,
-        "timestamp": TimestampKey
+        "timestamp": TimestampKey,
     }
     for initial_key_name, key_data in data.items():
         # We need to remove data before passing in as arguments, so copy it.
@@ -1264,7 +1262,7 @@ def make_keys(data):
         class_name = prepped_data.pop("type")
         KeyClass = names_classes.get(class_name)
         if not KeyClass:
-            raise DevError(
+            raise DskError(
                 "Invalid type: '%s'. Valid types are: %s"
                 % (class_name, list(names_classes.keys()))
             )

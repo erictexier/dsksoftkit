@@ -73,7 +73,7 @@ if __name__ == "__main__":
         ProdEnv(args.envi_file)
         if ProdEnv.base() != xori:
             searchpackfrom = [xori]
-        x = os.environ.get(dskenv_constants.DSK_ENV_PATH_KEY,"")
+        x = os.environ.get(dskenv_constants.DSK_ENV_PATH_KEY, "")
     else:
         log.info("Using envi_info file from %r" % x)
     searchpackfrom.append(ProdEnv.user_home(args.user))
