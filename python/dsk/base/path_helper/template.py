@@ -14,12 +14,13 @@ Management of file and directory templates.
 """
 
 import os
+import sys
 import six
 import six as sgsix
 from six.moves import zip
 from dsk.base.path_helper import templatekey
 from dsk.base.path_helper.errors import DevError
-from dsk.base.resources import dsk_constants as constants
+from dsk.base.resources import dsk_constants
 from dsk.base.path_helper.template_path_parser import TemplatePathParser
 
 from dsk.base.path_helper.platforms import is_linux, is_macos, is_windows
@@ -46,13 +47,13 @@ class Template(object):
         names_keys = {}
         ordered_keys = []
         # regular expression to find key names
-        regex = r"(?<={)%s(?=})" % constants.TEMPLATE_KEY_NAME_REGEX
+        regex = r"(?<={)%s(?=})" % dsk_constants.TEMPLATE_KEY_NAME_REGEX
         key_names = re.findall(regex, definition)
         for key_name in key_names:
             key = keys.get(key_name)
             if key is None:
                 msg = "Template definition for template %s refers to key {%s}, which does not appear in supplied keys."
-                raise DskError(msg % (template_name, key_name))
+                raise DevError(msg % (template_name, key_name))
             else:
                 if names_keys.get(key.name, key) != key:
                     # Different keys using same name
@@ -60,7 +61,7 @@ class Template(object):
                         "Template definition for template %s uses two keys"
                         + " which use the name '%s'."
                     )
-                    raise DskError(msg % (template_name, key.name))
+                    raise DevError(msg % (template_name, key.name))
                 names_keys[key.name] = key
                 ordered_keys.append(key)
         return names_keys, ordered_keys
@@ -303,7 +304,7 @@ class Template(object):
                 break
 
         if keys is None:
-            raise DskError(
+            raise DevError(
                 "Tried to resolve a path from the template %s and a set "
                 "of input fields '%s' but the following required fields were missing "
                 "from the input: %s" % (self, fields, missing_keys)
@@ -342,8 +343,8 @@ class Template(object):
                 continue
             if token.startswith("["):
                 # check that optional contains a key
-                if not re.search("{*%s}" % constants.TEMPLATE_KEY_NAME_REGEX, token):
-                    raise DskError(
+                if not re.search("{*%s}" % dsk_constants.TEMPLATE_KEY_NAME_REGEX, token):
+                    raise DevError(
                         'Optional sections must include a key definition. Token: "%s" Template: %s'
                         % (token, self)
                     )
@@ -355,7 +356,7 @@ class Template(object):
 
             # check non-optional contains no dangleing brackets
             if re.search(r"[\[\]]", token):
-                raise DskError(
+                raise DevError(
                     "Square brackets are not allowed outside of optional section definitions."
                 )
 
@@ -385,7 +386,7 @@ class Template(object):
 
     def _clean_definition(self, definition):
         # Create definition with key names as strings with no format, enum or default values
-        regex = r"{(%s)}" % constants.TEMPLATE_KEY_NAME_REGEX
+        regex = r"{(%s)}" % dsk_constants.TEMPLATE_KEY_NAME_REGEX
         cleaned_definition = re.sub(regex, r"%(\g<1>)s", definition)
         return cleaned_definition
 
@@ -399,7 +400,7 @@ class Template(object):
         expanded_definition = (
             os.path.join(self._prefix, definition) if definition else self._prefix
         )
-        regex = r"{%s}" % constants.TEMPLATE_KEY_NAME_REGEX
+        regex = r"{%s}" % dsk_constants.TEMPLATE_KEY_NAME_REGEX
         tokens = re.split(regex, expanded_definition.lower())
         # Remove empty strings
         return [x for x in tokens if x]
@@ -445,7 +446,7 @@ class Template(object):
         path_fields = {}
         try:
             path_fields = self.get_fields(path, skip_keys=skip_keys)
-        except DskError:
+        except DevError:
             return None
 
         # Check that all required fields were found in the path:
@@ -510,7 +511,7 @@ class Template(object):
                 break
 
         if fields is None:
-            raise DskError("Template %s: %s" % (str(self), path_parser.last_error))
+            raise DevError("Template %s: %s" % (str(self), path_parser.last_error))
 
         return fields
 
@@ -614,13 +615,14 @@ class TemplatePath(Template):
             )
 
         else:
-            platform = sgsix.normalize_platform(platform)
+            platform = self._per_platform_roots.get(platform)
+            # platform = sgsix.normalize_platform(platform)
             # caller has requested a path for another OS
             if self._per_platform_roots is None:
                 # it's possible that the additional os paths are not set for a template
                 # object (mainly because of backwards compatibility reasons) and in this case
                 # we cannot compute the path.
-                raise DskError(
+                raise DevError(
                     "Template %s cannot resolve path for operating system '%s' - "
                     "it was instantiated in a mode which only supports the resolving "
                     "of current operating system paths." % (self, platform)
@@ -630,7 +632,7 @@ class TemplatePath(Template):
 
             if platform_root_path is None:
                 # either the platform is undefined or unknown
-                raise DskError(
+                raise DevError(
                     "Cannot resolve path for operating system '%s'! Please ensure "
                     "that you have a valid storage set up for this platform." % platform
                 )
@@ -658,7 +660,7 @@ class TemplatePath(Template):
                     return platform_root_path
 
             else:
-                raise DskError(
+                raise DevError(
                     "Cannot evaluate path. Unsupported platform '%s'." % platform
                 )
 
@@ -744,7 +746,9 @@ def read_templates(pipeline_configuration):
 
     :returns: Dictionary of form {template name: template object}
     """
+
     per_platform_roots = pipeline_configuration.get_all_platform_data_roots()
+
     data = pipeline_configuration.get_templates_config()
 
     # get dictionaries from the templates config file:
@@ -756,26 +760,20 @@ def read_templates(pipeline_configuration):
             d = {}
         return d
 
-    print("x"*199,pipeline_configuration)
-
-
     keys = templatekey.make_keys(get_data_section("keys"))
 
     template_paths = make_template_paths(
         get_data_section("paths"),
         keys,
-        per_platform_roots,
-        default_root=pipeline_configuration.get_primary_data_root_name(),
-    )
+        per_platform_roots, default_root=pipeline_configuration.get_primary_data_root_name())
 
     template_strings = make_template_strings(
-        get_data_section("strings"), keys, template_paths
-    )
+        get_data_section("strings"), keys, template_paths)
 
     # Detect duplicate names across paths and strings
     dup_names = set(template_paths).intersection(set(template_strings))
     if dup_names:
-        raise DskError(
+        raise DevError(
             "Detected paths and strings with the same name: %s" % str(list(dup_names))
         )
 
@@ -799,7 +797,7 @@ def make_template_paths(data, keys, all_per_platform_roots, default_root=None):
     """
 
     if data and not all_per_platform_roots:
-        raise DskError(
+        raise DevError(
             "At least one root must be defined when using 'path' templates."
         )
 
@@ -815,7 +813,7 @@ def make_template_paths(data, keys, all_per_platform_roots, default_root=None):
             if default_root:
                 root_name = default_root
             else:
-                raise DskError(
+                raise DevError(
                     "The template %s (%s) can not be evaluated. No root_name "
                     "is specified, and no root name can be determined from "
                     "the configuration. Update the template definition to "
@@ -826,16 +824,16 @@ def make_template_paths(data, keys, all_per_platform_roots, default_root=None):
         # to avoid confusion between strings and paths, validate to check
         # that each item contains at least a "/" (#19098)
         if "/" not in definition:
-            raise DskError(
+            raise DevError(
                 "The template %s (%s) does not seem to be a valid path. A valid "
                 "path needs to contain at least one '/' character. Perhaps this "
                 "template should be in the strings section "
                 "instead?" % (template_name, definition)
             )
 
-        root_path = all_per_platform_roots.get(root_name, {}).get(sgsix.platform)
+        root_path = all_per_platform_roots.get(root_name, {}).get(sys.platform)
         if root_path is None:
-            raise DskError(
+            raise DevError(
                 "Undefined Shotgun storage! The local file storage '%s' is not defined for this "
                 "operating system." % root_name
             )
@@ -875,7 +873,7 @@ def make_template_strings(data, keys, template_paths):
         validator = template_paths.get(validator_name)
         if validator_name and not validator:
             msg = "Template %s validate_with is set to undefined template %s."
-            raise DskError(msg % (template_name, validator_name))
+            raise DevError(msg % (template_name, validator_name))
 
         template_string = TemplateString(
             definition, keys, template_name, validate_with=validator
@@ -893,12 +891,12 @@ def _conform_template_data(template_data, template_name):
     if isinstance(template_data, six.string_types):
         template_data = {"definition": template_data}
     elif not isinstance(template_data, dict):
-        raise DskError(
+        raise DevError(
             "template %s has data which is not a string or dictionary." % template_name
         )
 
     if "definition" not in template_data:
-        raise DskError("Template %s missing definition." % template_name)
+        raise DevError("Template %s missing definition." % template_name)
 
     return template_data
 
@@ -937,7 +935,7 @@ def _process_templates_data(data, template_type):
             dups_msg += "%s: %s\n" % (", ".join(template_names), definition)
 
     if dups_msg:
-        raise DskError(
+        raise DevError(
             "It looks like you have one or more "
             "duplicate entries in your templates.yml file. Each template path that you "
             "define in the templates.yml file needs to be unique, otherwise toolkit "

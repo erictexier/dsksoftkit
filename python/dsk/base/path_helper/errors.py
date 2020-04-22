@@ -3,6 +3,13 @@ class DevError(Exception):
     """Top level exception for all core level runtime errors
     """
 
+class DevDescriptorError(DevError):
+    """
+    Base class for all descriptor related errors.
+    """
+
+    pass
+
 class DevUnreadableFileError(DevError):
     """Exception that indicates that a required file can't be read from disk.
     """

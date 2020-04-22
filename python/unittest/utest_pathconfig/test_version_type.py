@@ -8,7 +8,8 @@ from dsk.base.resources.dsk_constants import ROOT_CONFIG_DIR, NAME_CONFIG_DIR
 from dskenv.dskenv_constants import DSK_MOUNTED_ROOT, DSK_DEV_AREA
 from dskenv.base_env import BaseEnv
 root_envi = os.path.join(os.sep,
-                         DSK_MOUNTED_ROOT,DSK_DEV_AREA,
+                         DSK_MOUNTED_ROOT,
+                         DSK_DEV_AREA,
                          ROOT_CONFIG_DIR,
                          NAME_CONFIG_DIR)
 
@@ -35,6 +36,7 @@ def test_config():
     assert 'primary' in x
     assert 'secondary' in x
     x = template.read_templates(pc)
+
     assert x
 
     apackdir = os.path.join(root_envi,BaseEnv.envi_iddir(),BaseEnv.pack_tag())
@@ -59,7 +61,7 @@ def test_config():
 def test_add_config():
     pc = PathConfig(root_envi, ROOT_CONFIG_DIR)
 
-@pytest.mark.skipif(False, reason="just display")
+@pytest.mark.skipif(True, reason="just display")
 def test_project_config():
     from dsk.base.app.custom_menu import get_templates_config
     data = get_templates_config(project_file)

@@ -20,12 +20,9 @@ import copy
 import threading
 
 import yaml
-from dsk.base.path_helper.errors import (
-    DevError,
-    DevUnreadableFileError,
-    DevFileDoesNotExistError,
-)
-
+from dsk.base.path_helper.errors import DevError
+from dsk.base.path_helper.errors import DevUnreadableFileError
+from dsk.base.path_helper.errors import DevFileDoesNotExistError
 
 class CacheItem(object):
     """

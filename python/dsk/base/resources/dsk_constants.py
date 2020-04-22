@@ -16,7 +16,8 @@ TEMPLATE_NAME_FOR_PROJECT = '%s_info.yml'
 NAME_DEFAULT_PROJECT = 'dev_show'
 
 # subdirectory 
-ENVI_TEMPLATE_NAME = "template"
+ENVI_TEMPLATE_NAME = "pconfig"
+ENVI_NAMING_CORE = "core"
 
 # the storage name that is treated to be the primary storage for dsk
 PRIMARY_STORAGE_NAME = "primary"

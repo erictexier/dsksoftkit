@@ -3,9 +3,10 @@ import os
 from dsk.base.path_helper import yaml_cache
 from dsk.base.path_helper.shotgun_path import ShotgunPath
 from dsk.base.resources import dsk_constants
-
+from dsk.base.path_helper.storage_roots import StorageRoots
 from dsk.base.path_helper import template_includes
-from dsk.base.path_helper.errors import DevError,DevUnreadableFileError
+from dsk.base.path_helper.errors import DevError
+from dsk.base.path_helper.errors import DevUnreadableFileError
 
 def get_roots_metadata(pipeline_config_path):
     """
@@ -33,6 +34,7 @@ def get_roots_metadata(pipeline_config_path):
     # {'primary': {'mac_path': '/studio', 'windows_path': None, 'linux_path': '/studio'}}
     roots_yml = os.path.join(pipeline_config_path,
                              dsk_constants.ENVI_TEMPLATE_NAME,
+                             dsk_constants.ENVI_NAMING_CORE,
                              dsk_constants.STORAGE_ROOTS_FILE)
 
     try:
@@ -85,6 +87,18 @@ class PathConfig(object):
         self._pc_root = pipeline_configuration_path
         self._roots = get_roots_metadata(self._pc_root)
 
+        # keep a storage roots object interface instance in order to query roots
+        # info as needed
+        config_folder = os.path.join(
+                                    self._pc_root,
+                                    dsk_constants.ENVI_TEMPLATE_NAME)
+        self._storage_roots = StorageRoots.from_config(config_folder)
+        if self._storage_roots.required_roots and not self._storage_roots.default_path:
+            raise DevError(
+                "Could not identify a default storage root for this pipeline "
+                "configuration! File: '%s'" % (self._storage_roots.roots_file,)
+            )
+
     def get_all_platform_data_roots(self):
         """
         Similar to get_data_roots but instead of returning the data roots for a single 
@@ -125,6 +139,7 @@ class PathConfig(object):
         """
         templates_file = os.path.join(self._pc_root,
                                       dsk_constants.ENVI_TEMPLATE_NAME,
+                                      dsk_constants.ENVI_NAMING_CORE,
                                       dsk_constants.CONTENT_TEMPLATES_FILE)
 
         try:
@@ -134,3 +149,13 @@ class PathConfig(object):
             data = dict()
 
         return data
+
+    def get_primary_data_root_name(self):
+        """
+        Returns the default root name as defined by the required roots for this
+        configuration.
+
+        :returns: str name of a storage root
+        """
+        # return self._roots
+        return self._storage_roots.default
