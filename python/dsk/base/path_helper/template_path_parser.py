@@ -337,7 +337,7 @@ class TemplatePathParser(object):
                 # get the actual value for this key - this will also validate the value:
                 try:
                     possible_value = key.value_from_str(possible_value_str)
-                except DskError as e:
+                except DevError as e:
                     # it appears some locales are not able to correctly encode
                     # the error message to str here, so use the %r form for the error
                     # (ticket 24810)

@@ -16,8 +16,9 @@ Management of file and directory templates.
 import os
 import sys
 import six
-import six as sgsix
+
 from six.moves import zip
+from dsk.base.path_helper import sgsix
 from dsk.base.path_helper import templatekey
 from dsk.base.path_helper.errors import DevError
 from dsk.base.resources import dsk_constants
@@ -615,8 +616,7 @@ class TemplatePath(Template):
             )
 
         else:
-            platform = self._per_platform_roots.get(platform)
-            # platform = sgsix.normalize_platform(platform)
+            platform = sgsix.normalize_platform(platform)
             # caller has requested a path for another OS
             if self._per_platform_roots is None:
                 # it's possible that the additional os paths are not set for a template
@@ -746,9 +746,7 @@ def read_templates(pipeline_configuration):
 
     :returns: Dictionary of form {template name: template object}
     """
-
     per_platform_roots = pipeline_configuration.get_all_platform_data_roots()
-
     data = pipeline_configuration.get_templates_config()
 
     # get dictionaries from the templates config file:
@@ -765,10 +763,12 @@ def read_templates(pipeline_configuration):
     template_paths = make_template_paths(
         get_data_section("paths"),
         keys,
-        per_platform_roots, default_root=pipeline_configuration.get_primary_data_root_name())
+        per_platform_roots, default_root=pipeline_configuration.get_primary_data_root_name()
+    )
 
     template_strings = make_template_strings(
-        get_data_section("strings"), keys, template_paths)
+        get_data_section("strings"), keys, template_paths
+    )
 
     # Detect duplicate names across paths and strings
     dup_names = set(template_paths).intersection(set(template_strings))
@@ -831,7 +831,7 @@ def make_template_paths(data, keys, all_per_platform_roots, default_root=None):
                 "instead?" % (template_name, definition)
             )
 
-        root_path = all_per_platform_roots.get(root_name, {}).get(sys.platform)
+        root_path = all_per_platform_roots.get(root_name, {}).get(sgsix.platform)
         if root_path is None:
             raise DevError(
                 "Undefined Shotgun storage! The local file storage '%s' is not defined for this "

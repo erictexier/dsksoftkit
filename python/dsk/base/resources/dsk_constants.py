@@ -18,6 +18,7 @@ NAME_DEFAULT_PROJECT = 'dev_show'
 # subdirectory 
 ENVI_TEMPLATE_NAME = "pconfig"
 ENVI_NAMING_CORE = "core"
+PIPELINECONFIG_FILE = "pipeline_configuration.yml"
 
 # the storage name that is treated to be the primary storage for dsk
 PRIMARY_STORAGE_NAME = "primary"

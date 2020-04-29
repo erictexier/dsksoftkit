@@ -33,6 +33,7 @@ assert os.path.exists(root_envi)
 def test_config():
     pc = PathConfig(root_envi, ROOT_CONFIG_DIR)
     x = pc.get_all_platform_data_roots()
+    assert pc.is_site_configuration()
     assert 'primary' in x
     assert 'secondary' in x
     x = template.read_templates(pc)
@@ -82,15 +83,16 @@ def test_version_reg():
     a5 = "021_2400_Anim_playblast.v037.mov" # {'type': 'Shot', 'id': 11165, 'name': '021_2400'}
 
 
-@pytest.mark.skipif(True, reason="Not Done Yet")
+@pytest.mark.skipif(False, reason="Not Done Yet")
 def test_base_template():
     pc = PathConfig(root_envi,'newshot')
     x = template.read_templates(pc)
-    pc.get_all_platform_data_roots()
-    print(x["houdini_asset_publish"].missing_keys({}))
-    d = {'Episode': 'cpi', 'name': 'pidsa', 'Step': 'adsdf', 'version': '003', 'Asset': 'sgfd', 'sg_asset_type': 'gdfdfg'}
-    x["houdini_asset_publish"].apply_fields(d,platform="linux2")
-    print ("VALIDATE",x['houdini_asset_publish'].validate_and_get_fields('/mnt/cpi/assets/gdfdfg/sgfd/adsdf/publish/files/houdini/pidsa.v003.hip'))
+    # pc.get_all_platform_data_roots()
+    print(x["project_reference_file"].missing_keys({}))
+    d = {'Project': 'toto', 'name': 'bgref', 'version' : 3, 'img_ext' : 'jpg'}
+    # d = {'Episode': 'cpi', 'name': 'pidsa', 'Step': 'adsdf', 'version': '003', 'Asset': 'sgfd', 'sg_asset_type': 'gdfdfg'}
+    print (x["project_reference_file"].apply_fields(d,platform="linux"))
+    # print ("VALIDATE",x['project_reference_file'].validate_and_get_fields('/mnt/cpi/assets/gdfdfg/sgfd/adsdf/publish/files/houdini/pidsa.v003.hip'))
     
 
 
